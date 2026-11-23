@@ -1,0 +1,10 @@
+{
+  "titel": "Mika und der Sternenleuchtturm",
+  "start": "Nach einem Sturm ist der Sternenleuchtturm dunkel. Mika braucht deine Hilfe, damit die Boote heute Nacht den Hafen finden.",
+  "ende": "Der Sternenleuchtturm leuchtet wieder. Die Boote finden sicher nach Hause. Danke, dass du Mika geholfen hast!",
+  "kapitel": [
+    {"ab": 0, "titel": "Im Hafen", "auftakt": "Mika macht das Boot für die Überfahrt bereit."},
+    {"ab": 4, "titel": "Auf der Insel", "auftakt": "Ihr seid auf der Insel angekommen. Ein schmaler Weg führt zum Turm."},
+    {"ab": 8, "titel": "Im Leuchtturm", "auftakt": "Ihr habt den Turm erreicht. Jetzt bringt ihr die Lampe wieder zum Leuchten."}
+  ]
+}
