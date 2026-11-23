@@ -8,7 +8,7 @@ Statisches Browser-Minigame für Kinder in der 2. Klasse. Mika reist mit den Kin
 python3 -m http.server 8765 --bind 127.0.0.1 --directory public
 ```
 
-Anschließend [http://127.0.0.1:8765](http://127.0.0.1:8765) öffnen. Die Webdemo verwendet ein Zahlenfeld und optional einen kurzen Belohnungston. Sie verarbeitet Eingaben im Browser und benötigt weder Konto noch API-Schlüssel. Ein Neuladen setzt die Runde zurück.
+Anschließend [http://127.0.0.1:8765](http://127.0.0.1:8765) öffnen. Die Webdemo verwendet ein Zahlenfeld, vier stumme WebM-Clips sowie ein- und ausschaltbare Töne und Sprachausgabe. Die Sprachausgabe hängt von den verfügbaren Browserstimmen ab. Bei reduzierter Bewegung oder falls ein Clip nicht abgespielt werden kann, erscheint die Illustration. Die Spielauswertung läuft im Browser und benötigt weder Konto noch API-Schlüssel. Ein Neuladen setzt die Runde zurück.
 
 ## Über GitHub und Vercel veröffentlichen
 
@@ -16,7 +16,7 @@ Das Repository in Vercel als neues Git-Projekt importieren. Das Root Directory b
 
 ## Inhalt und Logik
 
-- `public/geschichte.json` enthält Einleitung, Kapitel und Ende.
+- `public/geschichte.json` enthält Einleitung, Kapitel, Ende und die Zuordnung der Videodateien unter `public/assets/`.
 - `public/aufgaben.json` enthält jede Szene, beide Operanden, den Operator, den allgemeinen Tipp, einen vorbereiteten Fehlwert mit gezieltem Tipp und den Lösungsweg.
 - `public/spiel.mjs` prüft die Zahl, verwaltet die Versuche und vergibt Sterne.
 

@@ -13,7 +13,10 @@
   <div class="site">
     <header class="top">
       <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span><span>Mikas Lernabenteuer</span></div>
-      <button class="sound" id="sound" type="button" aria-pressed="false">Ton aus</button>
+      <div class="audio-controls">
+        <button class="sound" id="replay-audio" type="button" hidden>🔊 Nochmal vorlesen</button>
+        <button class="sound" id="sound" type="button" aria-pressed="false">🔇 Ton aus</button>
+      </div>
     </header>
     <main>
       <section class="hero" id="intro" aria-labelledby="intro-title">
@@ -31,7 +34,8 @@
 
       <section id="game" class="hero play" aria-labelledby="chapter" hidden>
         <div class="hero-art play-art">
-          <img src="./assets/leuchtturm.webp" alt="" width="1200" height="900">
+          <img id="game-fallback-img" src="./assets/leuchtturm.webp" alt="" width="1200" height="900">
+          <video id="chapter-video" muted loop playsinline preload="auto" hidden></video>
           <div class="art-label"><span aria-hidden="true">✦</span> <span id="stars">0 Sterne</span></div>
         </div>
         <div class="hero-copy play-copy">
@@ -56,7 +60,10 @@
           <p class="intro-text" id="ending"></p>
           <button type="button" class="main-button" id="restart">Noch einmal spielen <span aria-hidden="true">↻</span></button>
         </div>
-        <div class="hero-art"><img src="./assets/leuchtturm.webp" alt="Der Leuchtturm strahlt über das Meer" width="1200" height="900"></div>
+        <div class="hero-art">
+          <img id="finish-fallback-img" src="./assets/leuchtturm.webp" alt="Der Leuchtturm strahlt über das Meer" width="1200" height="900">
+          <video id="finish-video" muted loop playsinline preload="auto" hidden></video>
+        </div>
       </section>
 
       <section class="route" aria-label="Deine Route">

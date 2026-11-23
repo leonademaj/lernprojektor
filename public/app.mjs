@@ -6,31 +6,154 @@ const game = byId("game");
 const finish = byId("finish");
 const start = byId("start");
 const sound = byId("sound");
+const replayAudio = byId("replay-audio");
 const form = byId("answer-form");
 const answer = byId("answer");
 const advance = byId("continue");
+const chapterVideo = byId("chapter-video");
+const gameFallbackImg = byId("game-fallback-img");
+const finishVideo = byId("finish-video");
+const finishFallbackImg = byId("finish-fallback-img");
 const stops = [...document.querySelectorAll(".stops li")];
+
 let tasks;
 let story;
 let round = initialRound();
 let audio;
 let soundEnabled = false;
+let soundPreferenceChosen = false;
+let lastSpokenText = "";
+let currentChapterVideoSrc = "";
 
-function playReward() {
+function updateSoundUI() {
+  sound.setAttribute("aria-pressed", String(soundEnabled));
+  sound.textContent = soundEnabled ? "🔊 Ton an" : "🔇 Ton aus";
+  replayAudio.hidden = !soundEnabled || !lastSpokenText || !("speechSynthesis" in window);
+}
+
+async function enableSound() {
+  if (soundEnabled) return;
+  const AudioCtx = window.AudioContext ?? window.webkitAudioContext;
+  if (AudioCtx) {
+    try {
+      audio ??= new AudioCtx();
+      if (audio.state !== "running") await audio.resume();
+    } catch {
+      // Fallback falls blockiert
+    }
+  }
+  soundEnabled = true;
+  updateSoundUI();
+}
+
+function stopSpeech() {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+  replayAudio.classList.remove("speaking");
+}
+
+function speak(text) {
+  lastSpokenText = text;
+  updateSoundUI();
+  if (!soundEnabled || !("speechSynthesis" in window) || !text) return;
+
+  stopSpeech();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "de-DE";
+  utterance.rate = 0.94;
+  utterance.pitch = 1.08;
+
+  const voices = window.speechSynthesis.getVoices();
+  const germanVoice = voices.find((v) => v.lang.startsWith("de") && !v.localService)
+    ?? voices.find((v) => v.lang.startsWith("de"));
+  if (germanVoice) utterance.voice = germanVoice;
+
+  utterance.onstart = () => replayAudio.classList.add("speaking");
+  utterance.onend = () => replayAudio.classList.remove("speaking");
+  utterance.onerror = () => replayAudio.classList.remove("speaking");
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function formatEquationForSpeech(task) {
+  const operatorWord = task.op === "+" ? "plus" : "minus";
+  return `Wie viel ist ${task.a} ${operatorWord} ${task.b}?`;
+}
+
+function playToneSequence(notes, type = "sine", volume = 0.085) {
   if (!soundEnabled || !audio || audio.state !== "running") return;
   const now = audio.currentTime;
-  for (const [index, frequency] of [523.25, 659.25, 783.99].entries()) {
-    const time = now + index * 0.095;
+  for (const [index, [frequency, duration, delay]] of notes.entries()) {
+    const time = now + (delay ?? index * 0.1);
     const oscillator = audio.createOscillator();
     const gain = audio.createGain();
-    oscillator.type = "sine";
+    oscillator.type = type;
     oscillator.frequency.value = frequency;
     gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.exponentialRampToValueAtTime(0.085, time + 0.022);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.25);
+    gain.gain.exponentialRampToValueAtTime(volume, time + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
     oscillator.connect(gain).connect(audio.destination);
     oscillator.start(time);
-    oscillator.stop(time + 0.26);
+    oscillator.stop(time + duration + 0.02);
+  }
+}
+
+function playEffect(kind) {
+  if (kind === "correct") {
+    playToneSequence([
+      [523.25, 0.25, 0],
+      [659.25, 0.25, 0.095],
+      [783.99, 0.35, 0.19],
+    ]);
+  } else if (kind === "hint" || kind === "solution") {
+    playToneSequence([
+      [440.0, 0.22, 0],
+      [392.0, 0.3, 0.14],
+    ], "triangle", 0.06);
+  } else if (kind === "retry") {
+    playToneSequence([[330.0, 0.18, 0]], "sine", 0.05);
+  } else if (kind === "finale") {
+    playToneSequence([
+      [523.25, 0.22, 0],
+      [659.25, 0.22, 0.11],
+      [783.99, 0.22, 0.22],
+      [1046.5, 0.55, 0.33],
+    ]);
+  }
+}
+
+function setStageMedia(videoEl, fallbackImgEl, src) {
+  if (!src || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    videoEl.hidden = true;
+    videoEl.pause();
+    fallbackImgEl.hidden = false;
+    return;
+  }
+
+  videoEl.onerror = () => {
+    videoEl.hidden = true;
+    fallbackImgEl.hidden = false;
+  };
+
+  videoEl.onloadeddata = () => {
+    if (videoEl.parentElement.closest("[hidden]")) return;
+    fallbackImgEl.hidden = true;
+    videoEl.hidden = false;
+    videoEl.play().catch(() => {
+      if (videoEl.getAttribute("src") !== src) return;
+      videoEl.hidden = true;
+      fallbackImgEl.hidden = false;
+    });
+  };
+
+  if (videoEl.getAttribute("src") !== src) {
+    fallbackImgEl.hidden = false;
+    videoEl.hidden = true;
+    videoEl.src = src;
+    videoEl.load();
+  } else if (!videoEl.hidden) {
+    videoEl.play().catch(() => {});
   }
 }
 
@@ -52,16 +175,25 @@ function showQuestion() {
   const task = tasks[round.position];
   const chapter = chapterIndex(story.kapitel, round.position);
   const place = story.kapitel[chapter];
-  byId("chapter").textContent = place.titel;
-  byId("question-number").textContent = `Aufgabe ${round.position + 1} von ${tasks.length}`;
-  byId("scene").textContent = round.position === place.ab
+  const sceneText = round.position === place.ab
     ? `${place.auftakt} ${task.szene}`
     : task.szene;
+
+  byId("chapter").textContent = place.titel;
+  byId("question-number").textContent = `Aufgabe ${round.position + 1} von ${tasks.length}`;
+  byId("scene").textContent = sceneText;
   byId("equation").textContent = `${task.a} ${task.op} ${task.b} = ?`;
   byId("stars").textContent = starCount(round.stars);
   game.dataset.chapter = chapter;
   setRoute(chapter);
   renderFeedback();
+
+  if (currentChapterVideoSrc !== place.video) {
+    currentChapterVideoSrc = place.video ?? "";
+    setStageMedia(chapterVideo, gameFallbackImg, currentChapterVideoSrc);
+  }
+
+  speak(`${sceneText} ${formatEquationForSpeech(task)}`);
   byId("chapter").focus({ preventScroll: true });
 }
 
@@ -76,9 +208,12 @@ function renderFeedback() {
   advance.textContent = round.position === tasks.length - 1 ? "Licht einschalten ✦" : "Weiter →";
 }
 
-function begin() {
+async function begin() {
   if (!tasks || !story) return;
+  if (!soundPreferenceChosen) await enableSound();
+  finishVideo.pause();
   round = initialRound();
+  currentChapterVideoSrc = "";
   answer.value = "";
   intro.hidden = true;
   finish.hidden = true;
@@ -95,7 +230,8 @@ form.addEventListener("submit", (event) => {
   const next = evaluateAnswer(round, tasks[round.position], answer.value);
   if (next === round) return;
   round = next;
-  if (round.feedback.kind === "correct") playReward();
+  playEffect(round.feedback.kind);
+  speak(round.feedback.text);
   answer.value = "";
   renderFeedback();
   if (round.feedback.advance) advance.focus();
@@ -111,32 +247,39 @@ advance.addEventListener("click", () => {
     showQuestion();
   } else {
     game.hidden = true;
+    chapterVideo.pause();
     finish.hidden = false;
     byId("final-stars").textContent = `✦ ${starCount(round.stars)} gesammelt`;
     byId("ending").textContent = story.ende;
     setRoute(-1, true);
-    playReward();
+    setStageMedia(finishVideo, finishFallbackImg, story.finale_video);
+    playEffect("finale");
+    speak(`Das Licht ist zurück! ${story.ende}`);
     byId("finish-title").focus({ preventScroll: true });
   }
   window.scrollTo(0, 0);
 });
 
-const audioSupported = window.AudioContext ?? window.webkitAudioContext;
-sound.hidden = !audioSupported;
 sound.addEventListener("click", async () => {
+  soundPreferenceChosen = true;
   if (!soundEnabled) {
-    try {
-      audio ??= new audioSupported();
-      await audio.resume();
-    } catch {
-      sound.hidden = true;
-      return;
-    }
+    await enableSound();
+    if (lastSpokenText) speak(lastSpokenText);
+  } else {
+    soundEnabled = false;
+    stopSpeech();
+    updateSoundUI();
   }
-  soundEnabled = !soundEnabled;
-  sound.setAttribute("aria-pressed", String(soundEnabled));
-  sound.textContent = soundEnabled ? "Ton an" : "Ton aus";
 });
+
+replayAudio.addEventListener("click", () => {
+  if (lastSpokenText) speak(lastSpokenText);
+});
+
+if ("speechSynthesis" in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
 
 async function readContent(url) {
   const response = await fetch(url);
