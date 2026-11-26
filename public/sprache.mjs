@@ -47,10 +47,11 @@ export function voiceCommand(text) {
   const phrase = text.toLocaleLowerCase("de-DE").replace(/[^a-zäöüß\d ]/g, "").trim().replace(/ +/g, " ");
   const commands = {
     leuchtturm: ["leuchtturm", "sternleuchtturm", "sternenleuchtturm", "mika", "plus und minus", "eins", "1"],
-    einmaleins: ["einmaleins", "kleines einmaleins", "obststand", "zwei", "2"],
+    einmaleins: ["einmaleins", "kleines einmaleins", "fino", "fino und pip", "pip", "pip will nach hause", "zwei", "2"],
     start: ["start", "starten", "los", "los gehts", "abenteuer starten"],
     next: ["weiter", "nächste", "nächste aufgabe", "nächste szene", "licht einschalten", "geschichte abschließen"],
     repeat: ["nochmal", "noch mal", "noch einmal", "wiederholen", "vorlesen", "abspielen"],
+    unknown: ["weiß nicht", "ich weiß nicht", "keine ahnung"],
     back: ["zurück", "vorherige szene"],
     menu: ["auswahl", "zur auswahl", "menü", "hauptmenü", "zur lernpfadauswahl", "startseite"],
     mute: ["ton aus", "leise"],

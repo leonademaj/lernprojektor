@@ -8,7 +8,7 @@ const voice = connectRecognition({
   automaticButton: document.querySelector("[data-automatic-voice]"),
   isReady: () => true,
   stopPlayback: () => {},
-  prompt: () => "Ich höre zu. Sag „Leuchtturm“ oder „Einmaleins“.",
+  prompt: () => "Ich höre zu. Sag „Leuchtturm“ oder „Fino“.",
   handle(text) {
     const command = voiceCommand(text);
     if (command !== "leuchtturm" && command !== "einmaleins") return false;

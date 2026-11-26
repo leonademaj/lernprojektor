@@ -26,9 +26,9 @@ Die Spielinhalte stammen aus dem lokalen Raspberry-Pi-Entwicklungsstand. Die geh
 
 ## Lernpfade
 
-Die Startseite lässt zwischen Leuchtturm (Plus und Minus) und Sachaufgaben zum kleinen Einmaleins wählen. Der Leuchtturm ist über `leuchtturm.html` erreichbar. `einmaleins.html` lädt seine Szenen in der Reihenfolge aus `public/einmaleins.json`. Die Obststand-Szenen sind als Beispiel markiert.
+Die Startseite lässt zwischen Leuchtturm (Plus und Minus) und **Fino und Pip · Pip will nach Hause** (kleines Einmaleins) wählen. Der Leuchtturm liegt unter `/leuchtturm.html`, die Fino-Episode unter `/fino/`. Der alte Weblink `/einmaleins.html` führt auf Vercel zur Fino-Episode. Die Obststand-Beispielrunde liegt weiterhin im Quellcode.
 
-Für die fertige Einmaleins-Geschichte `beispiel` auf `false` setzen und Titel, Abschluss und Szenen ersetzen. Medien unter `public/assets/` ablegen und je Szene über die folgenden Felder zuordnen. Unterstützte Bild- und Videoformate richten sich nach dem Browser.
+Die Fino-Episode verwendet die Szenenbilder und MP3s aus `public/fino`. Nach den gesprochenen Fragen wird die Antwort per Tastatur oder Sprache eingegeben. Richtige Antworten führen nach dem eingespielten Lob weiter. Für begleitete Tests lässt sich das Bedienfeld mit Kennzahlen und kopierbarem JSON-Protokoll öffnen. Die folgenden Felder beziehen sich auf die Obststand-Beispielrunde in `public/einmaleins.json`.
 
 | Feld | Inhalt |
 | --- | --- |

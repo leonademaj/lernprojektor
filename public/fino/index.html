@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fino und Pip · Pip will nach Hause</title>
+<style>
+/* Eine Bühne für den Beamer, darunter ein ausblendbares Bedienfeld für das Testteam. Bewusst nur dunkel. */
+:root {
+  --buehne: #0b1317;
+  --flaeche: rgba(16, 30, 37, 0.94);
+  --linie: #24404b;
+  --text: #eef4f5;
+  --leise: #9db4bb;
+  --fino: #f08a34;
+  --meer: #3fc3c1;
+  --richtig: #63c27e;
+  --falsch: #e8735c;
+  --display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--buehne); color: var(--text); font-family: var(--body); overflow: hidden; }
+button, input, select { font: inherit; }
+.zweit.link { display: inline-flex; align-items: center; text-decoration: none; }
+#lern-nav { position: fixed; inset: 12px auto auto 12px; display: flex; gap: 6px; flex-wrap: wrap; z-index: 22; pointer-events: none; }
+#lern-nav > * { background: #14242c; pointer-events: auto; }
+#sprachstatus { margin: 0; max-width: min(360px, 80vw); padding: 8px; border-radius: 8px; align-self: center; }
+#sprachstatus:empty { display: none; }
+#spielantwort { position: fixed; z-index: 8; bottom: 56px; left: 50%; transform: translateX(-50%);
+  display: grid; gap: 9px; width: min(540px, 92vw); background: var(--flaeche); border: 1px solid var(--linie); border-radius: 14px; padding: 12px 16px; }
+#spielfrage { margin: 0; font-weight: 700; font-size: clamp(1rem, 2.3vw, 1.25rem); }
+#spielzahl { min-width: 90px; flex: 1; background: #0e1a20; border: 1px solid var(--linie); color: var(--text); border-radius: 8px; padding: 8px; }
+body:not(.panel-aus) #spielantwort { bottom: calc(var(--panelhoehe, 0px) + 16px); }
+.dialog { padding-top: 74px; }
+@media (max-width: 600px) { #lern-nav { right: 12px; } #lern-nav > * { font-size: .83rem; } .dialog { padding-top: 88px !important; } .tier.breit { width: min(14vw, 96px) !important; } }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--meer); outline-offset: 2px; }
+
+/* Bühne */
+#buehne { position: fixed; inset: 0; display: grid; place-items: center; overflow: hidden; }
+.ebene { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; }
+.ebene.an { opacity: 1; }
+.ebene img { width: 100%; height: 100%; object-fit: contain; animation: zoom 28s ease-in-out infinite alternate; transform-origin: 55% 50%; }
+@keyframes zoom { from { transform: scale(1); } to { transform: scale(1.07) translateX(-1%); } }
+.platzhalter { width: 100%; height: 100%; display: grid; place-items: center; text-align: center;
+  background: radial-gradient(ellipse at 50% 120%, #1e5d6a 0%, #12313b 45%, var(--buehne) 100%); }
+.platzhalter b { display: block; font-family: var(--display); font-size: clamp(28px, 4vw, 56px); color: var(--text); }
+.platzhalter span { color: var(--leise); font-size: clamp(14px, 1.6vw, 20px); }
+#untertitel { position: absolute; left: 50%; bottom: calc(var(--panelhoehe, 0px) + 24px); transform: translateX(-50%);
+  max-width: min(900px, 90vw); padding: 10px 18px; border-radius: 10px; background: rgba(0,0,0,0.6);
+  font-size: clamp(16px, 2vw, 26px); text-align: center; text-wrap: balance; display: none; }
+body.untertitel #untertitel:not(:empty) { display: block; }
+
+
+/* Zählbild: genau so viele Tiere wie in der Aufgabe */
+#zaehlbild { position: absolute; left: 50%; top: 6%; transform: translateX(-50%); display: none;
+  max-width: min(1100px, 94vw); padding: 14px 18px 10px; border-radius: 18px;
+  background: rgba(250, 246, 236, 0.9); box-shadow: 0 8px 30px rgba(0,0,0,.35); }
+#zaehlbild.an { display: block; }
+#zaehlbild .reihe5 { display: flex; justify-content: center; gap: 10px; }
+#zaehlbild .reihe5 + .reihe5 { margin-top: 6px; }
+.tier { position: relative; width: clamp(64px, 8.5vw, 120px); aspect-ratio: 1; opacity: 0; transform: scale(.6);
+  transition: opacity .35s ease, transform .35s ease; }
+.tier.da { opacity: 1; transform: scale(1); }
+.tier.breit { aspect-ratio: 1.7; width: clamp(96px, 12.5vw, 176px); }
+.tier img { width: 100%; height: 100%; object-fit: contain; }
+.tier b { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%); min-width: 2.2em; text-align: center;
+  font-family: var(--display); font-size: clamp(16px, 1.8vw, 26px); line-height: 1.3; color: #fff; background: var(--fino);
+  border-radius: 999px; padding: 0 8px; opacity: 0; transition: opacity .3s ease; }
+.tier b.da { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .tier, .tier b { transition: none; } }
+
+/* Start und Ende */
+.dialog { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px;
+  background: linear-gradient(180deg, rgba(11,19,23,0.82), rgba(11,19,23,0.96)); }
+.karte { width: min(560px, 100%); max-height: 100%; overflow: auto; background: var(--flaeche); border: 1px solid var(--linie);
+  border-radius: 16px; padding: 28px; display: grid; gap: 16px; }
+.karte h1 { font-family: var(--display); font-size: 40px; line-height: 1.05; margin: 0; text-wrap: balance; }
+.karte h1 small { display: block; font-size: 18px; color: var(--fino); font-family: var(--body); font-weight: 800; letter-spacing: .02em; }
+.karte p { margin: 0; color: var(--leise); line-height: 1.5; }
+.felder { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.feld { display: grid; gap: 6px; font-size: 14px; color: var(--leise); }
+.feld input, .feld select { background: #0e1a20; color: var(--text); border: 1px solid var(--linie); border-radius: 8px; padding: 10px 12px; }
+.check { display: flex; gap: 10px; align-items: center; color: var(--leise); font-size: 14px; }
+.haupt { background: var(--fino); color: #1b0f05; border: 0; border-radius: 10px; padding: 14px 20px; font-weight: 800; font-size: 18px; cursor: pointer; }
+.haupt:hover { filter: brightness(1.08); }
+.zweit { background: transparent; color: var(--text); border: 1px solid var(--linie); border-radius: 10px; padding: 10px 16px; cursor: pointer; }
+.bestand { font-size: 14px; color: var(--leise); display: grid; gap: 4px; }
+.bestand strong { color: var(--text); }
+.tasten { font-size: 13px; color: var(--leise); line-height: 1.6; }
+kbd { font-family: ui-monospace, Menlo, monospace; background: #0e1a20; border: 1px solid var(--linie); border-radius: 4px; padding: 0 5px; color: var(--text); }
+.zahlen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.zahl { background: #0e1a20; border: 1px solid var(--linie); border-radius: 10px; padding: 12px; }
+.zahl b { display: block; font-family: var(--display); font-size: 30px; font-variant-numeric: tabular-nums; }
+.zahl span { font-size: 13px; color: var(--leise); }
+textarea { width: 100%; min-height: 120px; background: #0e1a20; color: var(--text); border: 1px solid var(--linie); border-radius: 8px; padding: 10px; font: 12px/1.4 ui-monospace, Menlo, monospace; }
+.notizliste { margin: 0; padding-left: 18px; color: var(--leise); font-size: 14px; }
+
+/* Bedienfeld */
+#panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--flaeche); border-top: 1px solid var(--linie);
+  padding: 12px 16px; display: grid; grid-template-columns: minmax(220px, 1.1fr) minmax(280px, 1.3fr) minmax(220px, 1fr); gap: 16px; }
+body.panel-aus #panel { transform: translateY(100%); }
+#panel { transition: transform .25s ease; }
+.status { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.pille { justify-self: start; font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: #1b2f38; color: var(--leise); }
+.pille.dran { background: var(--meer); color: #04201f; animation: puls 1.4s ease-in-out infinite; }
+@keyframes puls { 50% { opacity: .65; } }
+.ort { font-size: 14px; color: var(--leise); }
+.loesung { font-family: var(--display); font-size: 22px; }
+.loesung em { font-style: normal; color: var(--fino); }
+.spricht { font-size: 13px; color: var(--leise); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.eingabe { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: stretch; }
+#anzeige { font-family: var(--display); font-size: 44px; text-align: center; background: #0e1a20; border: 1px solid var(--linie); border-radius: 10px;
+  display: grid; place-items: center; font-variant-numeric: tabular-nums; min-height: 96px; }
+.block { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.block button { background: #1a2c35; color: var(--text); border: 1px solid var(--linie); border-radius: 8px; padding: 8px 0; font-weight: 800; cursor: pointer; }
+.block button:hover:not(:disabled) { background: #22404c; }
+.block .ok { background: var(--fino); color: #1b0f05; border-color: var(--fino); }
+.block .breit { grid-column: span 2; font-size: 13px; }
+button:disabled { opacity: .35; cursor: default; }
+.steuer { display: grid; gap: 6px; align-content: start; }
+.reihe { display: flex; gap: 6px; flex-wrap: wrap; }
+.reihe button { flex: 1 1 auto; font-size: 13px; padding: 8px 10px; }
+.notiz { display: flex; gap: 6px; }
+.notiz input { flex: 1; min-width: 0; background: #0e1a20; color: var(--text); border: 1px solid var(--linie); border-radius: 8px; padding: 8px 10px; }
+#rueck { position: fixed; top: 16px; right: 16px; z-index: 11; padding: 8px 14px; border-radius: 999px; font-weight: 800; opacity: 0; transition: opacity .3s; pointer-events: none; }
+#rueck.zeigen { opacity: 1; }
+#zeigen { position: fixed; right: 12px; bottom: 12px; z-index: 9; display: none; }
+body.panel-aus #zeigen { display: block; }
+@media (max-width: 860px) {
+  #panel { grid-template-columns: 1fr; max-height: 70%; overflow: auto; }
+  .felder, .zahlen { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ebene img { animation: none; }
+  .ebene, #panel { transition: none; }
+  .pille.dran { animation: none; }
+}
+</style>
+</head>
+<body class="panel-aus">
+<div id="buehne" aria-live="off">
+  <div class="ebene" id="ebeneA"></div>
+  <div class="ebene" id="ebeneB"></div>
+  <div id="zaehlbild" aria-hidden="true"></div>
+  <div id="untertitel"></div>
+</div>
+<div id="rueck" role="status"></div>
+<nav id="lern-nav" aria-label="Lernprojektor">
+  <a class="zweit link" href="../">← Zur Auswahl</a>
+  <button class="zweit" id="automatik" type="button" aria-pressed="false" aria-describedby="sprachhinweis" hidden>Sprachsteuerung an</button>
+  <button class="zweit" id="sprechen" type="button" aria-pressed="false" aria-describedby="sprachhinweis" hidden>🎙 Sprechen</button>
+  <p id="sprachstatus" role="status" aria-live="polite"></p>
+  <span id="sprachhinweis" hidden>Dein Browser kann Gesprochenes an seinen Spracherkennungsdienst senden.</span>
+</nav>
+<form id="spielantwort" hidden>
+  <p id="spielfrage"></p>
+  <div class="reihe">
+    <input id="spielzahl" aria-label="Deine Antwort" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" placeholder="Deine Zahl" required>
+    <button class="haupt" type="submit">Prüfen</button>
+    <button class="zweit" id="frageWiederholen" type="button">Nochmal</button>
+  </div>
+</form>
+
+<section class="dialog" id="start">
+  <div class="karte">
+    <h1><small>Lernbox-Prototyp · Episode 1</small>Pip will nach Hause</h1>
+    <p>Fino und Pip auf dem Weg zum Hafen. Drei Hindernisse mit Zweier-, Fünfer- und Zehnerreihe. Du kannst die Antworten sprechen oder eintippen. Für begleitete Tests gibt es ein eigenes Bedienfeld.</p>
+    <div class="felder">
+      <label class="feld" for="kind">Kind (Pseudonym, kein Name)
+        <input id="kind" value="K01" autocomplete="off">
+      </label>
+      <label class="feld" for="stufe">Startstufe
+        <select id="stufe">
+          <option value="1">1 · Anzahl 2–5</option>
+          <option value="2">2 · Anzahl 2–10</option>
+          <option value="3">3 · Anzahl 6–10</option>
+        </select>
+      </label>
+    </div>
+    <label class="check" for="zb"><input type="checkbox" id="zb" checked> Zählbilder bei den Aufgaben zeigen (für die Variante „nur Audio“ aus)</label>
+    <label class="check" for="ut"><input type="checkbox" id="ut"> Untertitel auf der Bühne zeigen (für Kinder aus lassen)</label>
+    <div class="bestand" id="bestand">Prüfe Bilder …</div>
+    <button class="haupt" id="los">Episode starten</button>
+    <div class="tasten">
+      <kbd>0–9</kbd> Zahl · <kbd>Enter</kbd> bestätigen (leer = keine Antwort) · <kbd>?</kbd> weiß nicht · <kbd>W</kbd> wiederholen ·
+      <kbd>S</kbd> Ton überspringen · <kbd>N</kbd> Notiz · <kbd>P</kbd> Bedienfeld aus/an · <kbd>T</kbd> Untertitel · <kbd>F</kbd> Vollbild
+    </div>
+  </div>
+</section>
+
+<section class="dialog" id="ende" hidden>
+  <div class="karte">
+    <h1><small>Auswertung</small><span id="endeTitel">Episode beendet</span></h1>
+    <div class="zahlen" id="endeZahlen"></div>
+    <ol class="notizliste" id="endeNotizen"></ol>
+    <label class="feld" for="protokoll">Protokoll (JSON) zum Kopieren
+      <textarea id="protokoll" readonly></textarea>
+    </label>
+    <div class="reihe">
+      <button class="haupt" id="kopieren">Protokoll kopieren</button>
+      <button class="zweit" id="neu">Neu starten</button>
+      <a class="zweit link" href="../">Zur Auswahl</a>
+    </div>
+  </div>
+</section>
+
+<section id="panel" aria-label="Bedienfeld für das Testteam">
+  <div class="status">
+    <span class="pille" id="pille">Bereit</span>
+    <div class="ort" id="ort">–</div>
+    <div class="loesung" id="loesung">&nbsp;</div>
+    <div class="spricht" id="spricht"></div>
+  </div>
+  <div class="eingabe">
+    <div id="anzeige" aria-live="polite">–</div>
+    <div class="block" id="block">
+      <button data-z="1">1</button><button data-z="2">2</button><button data-z="3">3</button>
+      <button data-z="4">4</button><button data-z="5">5</button><button data-z="6">6</button>
+      <button data-z="7">7</button><button data-z="8">8</button><button data-z="9">9</button>
+      <button data-z="0">0</button><button data-a="loeschen">⌫</button><button data-a="ok" class="ok">OK</button>
+      <button data-a="weissnicht" class="breit">Weiß nicht</button>
+      <button data-a="keine" class="breit">Keine Antwort</button>
+      <button data-a="wiederholen" class="breit">Wiederholen</button>
+    </div>
+  </div>
+  <div class="steuer">
+    <div class="notiz">
+      <input id="notiz" placeholder="Beobachtung, z. B. schaut weg" aria-label="Notiz">
+      <button class="zweit" id="notizOk">Notiz</button>
+    </div>
+    <div class="reihe">
+      <button class="zweit" id="skip">Ton überspringen</button>
+      <button class="zweit" id="voll">Vollbild</button>
+      <button class="zweit" id="aus">Bedienfeld aus</button>
+      <button class="zweit" id="abbruch">Beenden</button>
+    </div>
+  </div>
+</section>
+<button class="zweit" id="zeigen">Bedienfeld</button>
+
+<script type="module">
+import { connectRecognition, spokenNumber, voiceCommand } from "../sprache.mjs";
+const EP = {"id":"ep01","titel":"Pip will nach Hause","abschnitte":[{"id":"intro","typ":"story","name":"Intro","bild":"B1a","bildwechsel":[{"t":12.0,"bild":"B1"}],"zeilen":[{"id":"ep01_intro_01","sprecher":"erzaehlerin","text":"Es ist ein windiger Morgen am Meer. Die Wellen rauschen, und Fino stapft mit seinem kleinen Rucksack über den Sand."},{"id":"ep01_intro_02","sprecher":"fino","text":"Ich liebe den Strand! Muscheln, Steine, Seetang … Hm? Was glitzert denn da vorne?"},{"id":"ep01_intro_03","sprecher":"erzaehlerin","text":"Zwischen zwei Steinen liegt ein kleines Stück Eis. Und darauf sitzt jemand. Jemand Kleines, Schwarz-Weißes, der ganz doll zittert."},{"id":"ep01_intro_04","sprecher":"pip","text":"Hallo. Ich bin Pip. Ich bin ein Pinguin. Und ich … ich hab mich verirrt."},{"id":"ep01_intro_05","sprecher":"pip","text":"Ich bin auf meiner Eisscholle eingeschlafen. Als ich aufgewacht bin, war mein Zuhause weg. Und meine Scholle wird immer kleiner!"},{"id":"ep01_intro_06","sprecher":"fino","text":"Keine Angst, Pip. Ich bin Fino. Wo wohnst du denn?"},{"id":"ep01_intro_07","sprecher":"pip","text":"Ganz weit im Süden. Auf der Eisinsel. Da, wo es immer schön kalt ist."},{"id":"ep01_intro_08","sprecher":"fino","text":"Dann brauchen wir ein Schiff! Im Hafen fahren Schiffe überallhin. Aber der Hafen ist weit weg. Wir müssen da sein, bevor die Sonne untergeht."},{"id":"ep01_intro_09","sprecher":"fino","text":"Hilfst du uns? Wenn ich dich etwas frage, drückst du auf den großen Knopf und sagst mir die Zahl. Los geht's!"}]},{"id":"h1","typ":"hindernis","name":"Hindernis 1 · Möwen","bild":"B2","zeilen":[{"id":"ep01_h1_01","sprecher":"erzaehlerin","text":"Fino und Pip laufen den Strand entlang bis zu einem langen Holzsteg. Aber auf dem Steg sitzen Möwen. Ganz viele Möwen. Und sie machen einen Riesenlärm."},{"id":"ep01_h1_02","sprecher":"kreischi","text":"Halt! Stopp! Hier kommt keiner vorbei! Ich bin Kreischi, die Chefin vom Steg. Und wir haben ein Problem!"},{"id":"ep01_h1_03","sprecher":"fino","text":"Was für ein Problem?"},{"id":"ep01_h1_04","sprecher":"kreischi","text":"Wir Möwen zählen nie unsere Köpfe. Wir zählen immer unsere Flügel! Das ist Möwen-Tradition. Aber dabei kommen wir ständig durcheinander. Wer uns beim Zählen hilft, darf über den Steg."},{"id":"ep01_h1_05","sprecher":"fino","text":"Jede Möwe hat zwei Flügel. Das schaffen wir zusammen!"}],"aufgabe":{"faktor":2,"anzahl":3,"bonus":0,"fragen":{"A":"{Anzahl} Möwen sitzen auf dem Geländer. Jede Möwe hat zwei Flügel. Wie viele Flügel sind das zusammen?","B":"Jetzt landen {anzahl} Möwen auf dem Steg. Jede hat zwei Flügel. Wie viele Flügel sind das?"},"tipp":"Zähl in Zweierschritten, für jede Möwe einen Schritt. Zwei, vier, sechs … und weiter!","loesung":"{Anzahl} Möwen mit je zwei Flügeln. Wir zählen in Zweierschritten: {reihe}. {Anzahl} mal zwei ist {ergebnis}.","loesungSprecher":"fino","lob":["Kraaah! Das stimmt!","Richtig! Endlich zählt mal einer ordentlich!","Genau so viele Flügel! Super!"],"lobSprecher":"kreischi","tier":"moewe"}},{"id":"s1","typ":"story","name":"Story 1","bild":"B3","zeilen":[{"id":"ep01_s1_01","sprecher":"kreischi","text":"Kraaah! Ihr seid die besten Flügelzähler, die ich kenne. Ihr dürft vorbei!"},{"id":"ep01_s1_02","sprecher":"erzaehlerin","text":"Die Möwen machen Platz. Fino und Pip laufen über den Steg. Doch am Ende des Stegs ist … nichts mehr. Nur Wasser. Bis zu den Felsen auf der anderen Seite."},{"id":"ep01_s1_03","sprecher":"pip","text":"Kein Problem! Pass auf!"},{"id":"ep01_s1_04","sprecher":"erzaehlerin","text":"Platsch! Pip springt ins Wasser. Er taucht unter, schnell wie ein Pfeil, und taucht drüben am Felsen wieder auf."},{"id":"ep01_s1_05","sprecher":"pip","text":"Ich kann tauchen! Das können Pinguine am allerbesten!"},{"id":"ep01_s1_06","sprecher":"fino","text":"Toll, Pip. Aber ich bin ein Fuchs. Füchse werden nass und schlecht gelaunt. Wie komme ich da rüber?"},{"id":"ep01_s1_07","sprecher":"erzaehlerin","text":"Da bewegt sich etwas zwischen den Felsen. Etwas Oranges. Mit ganz vielen Armen …"}]},{"id":"h2","typ":"hindernis","name":"Hindernis 2 · Seesterne","bild":"B4","zeilen":[{"id":"ep01_h2_01","sprecher":"oma_stella","text":"Na, wen haben wir denn da? Einen nassen Pinguin und einen trockenen Fuchs. Ich bin Oma Stella."},{"id":"ep01_h2_02","sprecher":"oma_stella","text":"Ich helfe dir, kleiner Fuchs. Meine Enkel und ich bauen dir eine Brücke. Wir halten uns mit unseren Armen an den Felsen fest. Jeder Seestern hat fünf Arme."},{"id":"ep01_h2_03","sprecher":"oma_stella","text":"Aber die Brücke hält nur, wenn ich weiß, wie viele Arme sich festhalten. Ich bin schon alt und zähle so langsam. Hilfst du mir?"}],"aufgabe":{"faktor":5,"anzahl":4,"bonus":1,"fragen":{"A":"{Anzahl} Seesterne halten sich am Felsen fest. Jeder hat fünf Arme. Wie viele Arme halten sich fest?","B":"Am nächsten Felsen sind es {anzahl} Seesterne. Jeder hat fünf Arme. Wie viele Arme sind das?"},"tipp":"Jeder Seestern hat so viele Arme, wie du Finger an einer Hand hast. Zähl in Fünferschritten: fünf, zehn, fünfzehn … und weiter.","loesung":"{Anzahl} Seesterne mit je fünf Armen. Wir zählen in Fünferschritten: {reihe}. {Anzahl} mal fünf ist {ergebnis}.","loesungSprecher":"oma_stella","lob":["Wunderbar, mein Kind.","Genau richtig. Die Brücke hält!","Du zählst schneller als alle meine Enkel!"],"lobSprecher":"oma_stella","tier":"seestern"}},{"id":"s2","typ":"story","name":"Story 2","bild":"B5","zeilen":[{"id":"ep01_s2_01","sprecher":"oma_stella","text":"Die Brücke hält! Lauf, kleiner Fuchs, lauf!"},{"id":"ep01_s2_02","sprecher":"erzaehlerin","text":"Fino balanciert über die Seestern-Brücke. Es kitzelt an den Pfoten. Fast ist er drüben … da rutscht ihm der Rucksack von der Schulter. Platsch! Der Rucksack versinkt im Wasser."},{"id":"ep01_s2_03","sprecher":"fino","text":"Oh nein! Da ist mein Proviant drin! Und meine Karte vom Hafen!"},{"id":"ep01_s2_04","sprecher":"pip","text":"Ich hol ihn!"},{"id":"ep01_s2_05","sprecher":"erzaehlerin","text":"Pip taucht hinab. Tief, tiefer, bis auf den Grund. Ein paar Sekunden ist alles still. … Dann, blubb, taucht er wieder auf. Den Rucksack hat er im Schnabel."},{"id":"ep01_s2_06","sprecher":"fino","text":"Pip, du bist der Beste!"},{"id":"ep01_s2_07","sprecher":"erzaehlerin","text":"Die Sonne steht schon tief. Fino schaut auf die nasse Karte. Der Hafen ist ganz nah. Aber vor dem Hafen ist ein großes Tor. Und davor hört man ein Klappern. Klick-klack. Klick-klack …"}]},{"id":"h3","typ":"hindernis","name":"Hindernis 3 · Krebse","bild":"B6","zeilen":[{"id":"ep01_h3_01","sprecher":"knut","text":"Halt! Wer will in meinen Hafen? Ich bin Knut, der Torwächter."},{"id":"ep01_h3_02","sprecher":"fino","text":"Wir müssen zum Schiff in den Süden! Pip muss nach Hause!"},{"id":"ep01_h3_03","sprecher":"knut","text":"Hm. Das Tor geht nur auf, wenn meine Krebse richtig gezählt sind. Jeder Krebs hat zehn Beine, die Scheren zählen mit. Wir marschieren in Gruppen. Sag mir, wie viele Beine durch das Tor gehen. Dann mache ich auf."}],"aufgabe":{"faktor":10,"anzahl":3,"bonus":0,"fragen":{"A":"Jetzt marschieren {anzahl} Krebse durch das Tor. Jeder hat zehn Beine. Wie viele Beine sind das?","B":"Klick-klack! Hier kommen {anzahl} Krebse. Jeder Krebs hat zehn Beine. Wie viele Beine trippeln da?"},"tipp":"Zähl in Zehnerschritten, für jeden Krebs einen Schritt. Zehn, zwanzig, dreißig … und weiter.","loesung":"{Anzahl} Krebse mit je zehn Beinen. {Reihe}. {Anzahl} mal zehn ist {ergebnis}.","loesungSprecher":"knut","lob":["Stimmt. Weiter so.","Hm. Richtig gezählt.","Klick-klack, das passt!"],"lobSprecher":"knut","tier":"krebs"}},{"id":"ab","typ":"story","name":"Abschluss","bild":"B7","zeilen":[{"id":"ep01_ab_01","sprecher":"knut","text":"Richtig gezählt. Tor auf!"},{"id":"ep01_ab_02","sprecher":"erzaehlerin","text":"Quietschend geht das große Tor auf. Dahinter liegt der Hafen, voller Boote. Und ganz am Ende liegt ein Schiff mit einem roten Segel: die Wellenreiter."},{"id":"ep01_ab_03","sprecher":"ottilie","text":"Ahoi, ihr zwei! Ich bin Kapitänin Ottilie. In den Süden wollt ihr? Zur Eisinsel? Da fahre ich morgen früh hin."},{"id":"ep01_ab_04","sprecher":"ottilie","text":"Aber ich sag's euch ehrlich: Der Weg ist weit. Und unterwegs kommen wir an der Nebelbucht vorbei. Da hat sich schon mancher verirrt …"},{"id":"ep01_ab_05","sprecher":"pip","text":"Fino? Kommst du mit?"},{"id":"ep01_ab_06","sprecher":"fino","text":"Na klar, Pip. Ich lass dich doch nicht allein."},{"id":"ep01_ab_07","sprecher":"erzaehlerin","text":"Die Sonne geht unter. Fino und Pip kuscheln sich in eine alte Kiste an Deck. Pips Schal ist warm, und das Meer schaukelt leise."},{"id":"ep01_ab_08","sprecher":"fino","text":"Danke, dass du uns geholfen hast. Ohne dich wären wir nie über den Steg gekommen. Morgen fahren wir los. Kommst du wieder mit? Gute Nacht!"},{"id":"ep01_ab_09","sprecher":"erzaehlerin","text":"Und während die Sterne aufgehen, schlafen Fino und Pip ein. Fortsetzung folgt."}]}]};
+
+/* ---------- Bilder ---------- */
+const BILDNAMEN = { B1a: "Strand, Fino allein", B1: "Strand mit Pip", B2: "Möwen am Steg", B3: "Pip taucht",
+  B4: "Seestern-Brücke", B5: "Rucksack-Rettung", B6: "Krebse am Hafentor", B7: "Schiff bei Sonnenuntergang" };
+const bildVorhanden = {};
+function bildPfad(n) { return "bilder/" + n + ".jpg"; }
+function pruefeBilder() {
+  const namen = Object.keys(BILDNAMEN);
+  return Promise.all(namen.map(n => new Promise(ok => {
+    const i = new Image();
+    i.onload = () => { bildVorhanden[n] = true; ok(); };
+    i.onerror = () => { bildVorhanden[n] = false; ok(); };
+    i.src = bildPfad(n);
+  }))).then(() => {
+    const da = namen.filter(n => bildVorhanden[n]);
+    const fehlt = namen.filter(n => !bildVorhanden[n]);
+    document.getElementById("bestand").innerHTML =
+      `<span><strong>${da.length} von ${namen.length} Bildern</strong> vorhanden: ${da.join(", ") || "keine"}</span>` +
+      (fehlt.length ? `<span>Platzhalter für: ${fehlt.join(", ")}</span>` : "") +
+      `<span>Fehlende Audios werden mit der Browser-Stimme vorgelesen.</span>`;
+  });
+}
+let aktiveEbene = "A", aktuellesBild = null;
+function zeigeBild(n) {
+  if (n === aktuellesBild) return;
+  aktuellesBild = n;
+  const neu = document.getElementById(aktiveEbene === "A" ? "ebeneB" : "ebeneA");
+  const alt = document.getElementById(aktiveEbene === "A" ? "ebeneA" : "ebeneB");
+  neu.innerHTML = bildVorhanden[n]
+    ? `<img src="${bildPfad(n)}" alt="${BILDNAMEN[n] || n}">`
+    : `<div class="platzhalter"><div><b>${BILDNAMEN[n] || n}</b><span>Bild ${n} fehlt noch</span></div></div>`;
+  neu.classList.add("an"); alt.classList.remove("an");
+  aktiveEbene = aktiveEbene === "A" ? "B" : "A";
+}
+
+/* ---------- Zahlwörter ---------- */
+const EINER = ["null","eins","zwei","drei","vier","fünf","sechs","sieben","acht","neun"];
+const SONDER = {10:"zehn",11:"elf",12:"zwölf",13:"dreizehn",14:"vierzehn",15:"fünfzehn",16:"sechzehn",17:"siebzehn",18:"achtzehn",19:"neunzehn"};
+const ZEHNER = {2:"zwanzig",3:"dreißig",4:"vierzig",5:"fünfzig",6:"sechzig",7:"siebzig",8:"achtzig",9:"neunzig"};
+function zahlwort(n) {
+  if (n === 100) return "hundert";
+  if (n < 10) return EINER[n];
+  if (n < 20) return SONDER[n];
+  const z = Math.floor(n / 10), e = n % 10;
+  return e === 0 ? ZEHNER[z] : (e === 1 ? "ein" : EINER[e]) + "und" + ZEHNER[z];
+}
+const gross = s => s.charAt(0).toUpperCase() + s.slice(1);
+function fuelle(vorlage, w) { return vorlage.replace(/\{(\w+)\}/g, (_, k) => w[k] ?? ""); }
+
+/* ---------- Ton: Clip, sonst Browser-Stimme ---------- */
+const STIMMLAGE = { erzaehlerin:{p:1,r:.95}, fino:{p:1.2,r:1}, pip:{p:1.45,r:1.08}, kreischi:{p:1.6,r:1.15},
+  oma_stella:{p:.85,r:.85}, knut:{p:.6,r:.92}, ottilie:{p:.8,r:.98} };
+const SPRECHER = { erzaehlerin:"Erzählerin", fino:"Fino", pip:"Pip", kreischi:"Kreischi", oma_stella:"Oma Stella", knut:"Knut", ottilie:"Kapitänin Ottilie" };
+let stimme = null, stopp = null;
+function waehleStimme() {
+  const alle = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+  const de = alle.filter(v => /^de/i.test(v.lang));
+  stimme = de.find(v => /anna/i.test(v.name)) || de.find(v => /google/i.test(v.name)) || de[0] || null;
+}
+if (window.speechSynthesis) { waehleStimme(); speechSynthesis.onvoiceschanged = waehleStimme; }
+const warte = ms => new Promise(r => setTimeout(r, ms));
+
+function spieleDatei(src, onZeit) {
+  return new Promise(ok => {
+    const a = new Audio(src);
+    let fertig = false;
+    const ende = erfolg => { if (fertig) return; fertig = true; stopp = null; a.pause(); ok(erfolg); };
+    a.addEventListener("ended", () => ende(true));
+    a.addEventListener("error", () => ende(false));
+    if (onZeit) a.addEventListener("timeupdate", () => onZeit(a.currentTime));
+    stopp = () => ende(true);
+    a.play().catch(() => ende(false));
+  });
+}
+function sprich(text, sprecher) {
+  return new Promise(ok => {
+    if (!window.speechSynthesis) { stopp = () => ok(); setTimeout(ok, 600 + text.length * 55); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const s = STIMMLAGE[sprecher] || STIMMLAGE.erzaehlerin;
+    u.lang = "de-DE"; if (stimme) u.voice = stimme; u.pitch = s.p; u.rate = s.r;
+    let fertig = false;
+    const ende = () => { if (fertig) return; fertig = true; stopp = null; ok(); };
+    u.onend = ende; u.onerror = ende;
+    stopp = () => { speechSynthesis.cancel(); ende(); };
+    speechSynthesis.speak(u);
+    setTimeout(ende, 4000 + text.length * 120); // Sicherheitsnetz, falls onend ausbleibt
+  });
+}
+async function sage(zeile) {
+  setzeSpricht(zeile);
+  const ok = await spieleDatei("audio/" + zeile.id + ".mp3");
+  if (!ok) { await sprich(zeile.text, zeile.sprecher); await warte(300); }
+  setzeSpricht(null);
+}
+function setzeSpricht(z) {
+  document.getElementById("spricht").textContent = z ? `${SPRECHER[z.sprecher] || z.sprecher}: ${z.text}` : "";
+  document.getElementById("untertitel").textContent = z ? z.text : "";
+}
+
+
+/* ---------- Zählbilder ---------- */
+// Platzhalter, bis echte Bilder in bilder/zaehl_<tier>.png liegen. Anzahl der Flügel/Arme/Beine stimmt garantiert.
+const SVG_TIER = {
+  moewe: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><g stroke="#3a3a3a" stroke-width="3" stroke-linejoin="round">
+    <path d="M58 58 C40 40 18 34 4 40 C20 46 34 56 50 66 Z" fill="#cfd6dc"/><path d="M62 58 C80 40 102 34 116 40 C100 46 86 56 70 66 Z" fill="#cfd6dc"/>
+    <ellipse cx="60" cy="68" rx="17" ry="24" fill="#fff"/><circle cx="60" cy="42" r="12" fill="#fff"/>
+    <path d="M70 43 L84 47 L70 50 Z" fill="#f2a43a"/><path d="M54 90 L52 108 M66 90 L68 108" fill="none" stroke="#f2a43a" stroke-width="4"/></g>
+    <circle cx="63" cy="40" r="2.6" fill="#222"/></svg>`,
+  seestern: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><path d="M60 6 L73 44 L114 44 L81 68 L94 108 L60 84 L26 108 L39 68 L6 44 L47 44 Z"
+    fill="#f28a52" stroke="#7a3518" stroke-width="3.5" stroke-linejoin="round"/><circle cx="53" cy="58" r="3.2" fill="#3a1a0c"/><circle cx="67" cy="58" r="3.2" fill="#3a1a0c"/>
+    <path d="M53 68 Q60 74 67 68" fill="none" stroke="#3a1a0c" stroke-width="2.6" stroke-linecap="round"/></svg>`,
+  krebs: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="#9e2a1c" stroke-width="4" stroke-linecap="round">
+    <path d="M38 70 L18 64 L8 74"/><path d="M38 76 L16 76 L8 88"/><path d="M40 82 L20 88 L14 100"/><path d="M44 86 L28 98 L24 110"/>
+    <path d="M82 70 L102 64 L112 74"/><path d="M82 76 L104 76 L112 88"/><path d="M80 82 L100 88 L106 100"/><path d="M76 86 L92 98 L96 110"/>
+    <path d="M44 62 L32 44"/><path d="M76 62 L88 44"/></g>
+    <g fill="#e0503a" stroke="#9e2a1c" stroke-width="3"><path d="M22 30 C22 18 38 16 40 28 L33 33 L42 38 C38 48 22 44 22 30 Z"/>
+    <path d="M98 30 C98 18 82 16 80 28 L87 33 L78 38 C82 48 98 44 98 30 Z"/><ellipse cx="60" cy="74" rx="26" ry="18"/></g>
+    <circle cx="53" cy="70" r="3" fill="#2a0e08"/><circle cx="67" cy="70" r="3" fill="#2a0e08"/></svg>`
+};
+const spriteDa = {};
+function pruefeSprites() {
+  return Promise.all(Object.keys(SVG_TIER).map(n => new Promise(ok => {
+    const i = new Image(); i.onload = () => { spriteDa[n] = true; ok(); }; i.onerror = () => { spriteDa[n] = false; ok(); };
+    i.src = "bilder/zaehl_" + n + ".png";
+  })));
+}
+function tierHTML(art) {
+  return spriteDa[art] ? `<img src="bilder/zaehl_${art}.png" alt="">`
+    : `<img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(SVG_TIER[art])}" alt="">`;
+}
+async function zeigeZaehlbild(art, n) {
+  const box = document.getElementById("zaehlbild");
+  if (!S.zaehlbilder || !art) return;
+  const reihen = n <= 5 ? [n] : [5, n - 5];   // Fünferstruktur: 7 = 5 + 2
+  box.innerHTML = reihen.map(r => `<div class="reihe5">${Array.from({ length: r }, () => `<div class="tier${art === "seestern" ? "" : " breit"}">${tierHTML(art)}<b></b></div>`).join("")}</div>`).join("");
+  box.classList.add("an");
+  for (const el of box.querySelectorAll(".tier")) { el.classList.add("da"); await warte(220); }
+}
+async function zaehleMit(faktor) {
+  const marken = document.querySelectorAll("#zaehlbild .tier b");
+  for (let i = 0; i < marken.length; i++) { marken[i].textContent = faktor * (i + 1); marken[i].classList.add("da"); await warte(650); }
+}
+function versteckeZaehlbild() { const b = document.getElementById("zaehlbild"); b.classList.remove("an"); b.innerHTML = ""; }
+
+/* ---------- Zustand und Protokoll ---------- */
+let S = null;
+function log(ereignis, daten = {}) {
+  S.log.push({ t: Math.round((performance.now() - S.start) / 100) / 10, ereignis, ...daten });
+}
+class Abbruch extends Error {}
+function pruefeAbbruch() { if (S.abbruch) throw new Abbruch(); }
+
+/* ---------- Eingabe ---------- */
+let wartet = null, eingabeText = "", aktuelleFrage = "";
+const spielantwort = document.getElementById("spielantwort");
+const spielzahl = document.getElementById("spielzahl");
+const startDialog = document.getElementById("start");
+const endDialog = document.getElementById("ende");
+
+function antwort(art, wert) {
+  if (!wartet) return false;
+  voice.reset();
+  wartet({ art, wert });
+  return true;
+}
+
+const voice = connectRecognition({
+  button: document.getElementById("sprechen"),
+  status: document.getElementById("sprachstatus"),
+  note: document.getElementById("sprachhinweis"),
+  automaticButton: document.getElementById("automatik"),
+  isReady: () => Boolean(wartet || !startDialog.hidden || !endDialog.hidden) && !spielzahl.value,
+  stopPlayback: () => {},
+  prompt: () => wartet ? "Ich höre zu. Sag deine Zahl oder „Nochmal“." :
+    (!endDialog.hidden ? "Sag „Neustart“ oder „Zur Auswahl“." : "Sag „Start“ oder „Zur Auswahl“."),
+  handle(text) {
+    const command = voiceCommand(text);
+    if (command === "menu") {
+      window.location.assign("../");
+      return true;
+    }
+    if (!startDialog.hidden && ["start", "next", "einmaleins"].includes(command)) {
+      starte();
+      return true;
+    }
+    if (!endDialog.hidden && ["restart", "start", "repeat"].includes(command)) {
+      startDialog.hidden = false;
+      starte();
+      return true;
+    }
+    if (command === "repeat") return antwort("wiederholen");
+    if (command === "unknown") return antwort("weiss_nicht");
+    const value = spokenNumber(text);
+    return value !== null && antwort("zahl", value);
+  },
+});
+
+spielantwort.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const value = spokenNumber(spielzahl.value);
+  if (value !== null) antwort("zahl", value);
+});
+spielzahl.addEventListener("input", voice.reset);
+document.getElementById("frageWiederholen").addEventListener("click", () => antwort("wiederholen"));
+function setzeModus(dran) {
+  const p = document.getElementById("pille");
+  p.textContent = dran ? "Kind ist dran" : "Box spricht";
+  p.classList.toggle("dran", dran);
+  spielantwort.hidden = !dran;
+  document.getElementById("sprechen").disabled = !dran && startDialog.hidden && endDialog.hidden;
+  document.querySelectorAll("#block button").forEach(b => b.disabled = !dran);
+}
+function zeigeEingabe() { document.getElementById("anzeige").textContent = eingabeText || "–"; }
+function warteAufKind() {
+  eingabeText = ""; spielzahl.value = ""; zeigeEingabe(); setzeModus(true);
+  document.getElementById("spielfrage").textContent = aktuelleFrage;
+  return new Promise(ok => {
+    wartet = e => { voice.reset(); wartet = null; setzeModus(false); ok(e); };
+    voice.startAutomatic();
+  });
+}
+function aktion(a, z) {
+  if (!wartet) return;
+  if (z !== undefined) { if (eingabeText.length < 3) eingabeText += z; zeigeEingabe(); return; }
+  if (a === "loeschen") { eingabeText = eingabeText.slice(0, -1); zeigeEingabe(); return; }
+  if (a === "ok") { wartet(eingabeText === "" ? { art: "keine_antwort" } : { art: "zahl", wert: parseInt(eingabeText, 10) }); return; }
+  if (a === "weissnicht") wartet({ art: "weiss_nicht" });
+  if (a === "keine") wartet({ art: "keine_antwort" });
+  if (a === "wiederholen") wartet({ art: "wiederholen" });
+}
+function rueckmeldung(text, farbe) {
+  const r = document.getElementById("rueck");
+  r.textContent = text; r.style.background = farbe; r.style.color = "#0b1317";
+  r.classList.add("zeigen"); clearTimeout(r._t); r._t = setTimeout(() => r.classList.remove("zeigen"), 1800);
+}
+
+/* ---------- Ablauf ---------- */
+const STUFEN = { 1: [2, 5], 2: [2, 10], 3: [6, 10] };
+const begrenze = s => Math.max(1, Math.min(3, s));
+function wuerfle(faktor, stufe) {
+  const [lo, hi] = STUFEN[stufe];
+  for (let i = 0; i < 40; i++) {
+    const n = lo + Math.floor(Math.random() * (hi - lo + 1));
+    const k = faktor + "x" + n;
+    if (!S.gestellt.has(k)) { S.gestellt.add(k); return n; }
+  }
+  return lo + Math.floor(Math.random() * (hi - lo + 1));
+}
+function werte(n, faktor) {
+  const reihe = Array.from({ length: n }, (_, i) => zahlwort(faktor * (i + 1))).join(", ");
+  return { anzahl: zahlwort(n), Anzahl: gross(zahlwort(n)), reihe, Reihe: gross(reihe), ergebnis: zahlwort(n * faktor) };
+}
+function passeAn(ersterVersuch, geloest) {
+  const alt = S.stufe;
+  if (ersterVersuch) { S.folge++; if (S.folge >= 2) { S.stufe = begrenze(S.stufe + 1); S.folge = 0; } }
+  else { S.folge = 0; if (!geloest) S.stufe = begrenze(S.stufe - 1); }
+  if (S.stufe !== alt) log("stufe", { von: alt, nach: S.stufe });
+}
+const pad = n => String(n).padStart(2, "0");
+
+async function aufgabe(ab, nr) {
+  const a = ab.aufgabe, hid = ab.id;
+  const stufe = begrenze(S.stufe + a.bonus);
+  const n = wuerfle(a.faktor, stufe), w = werte(n, a.faktor), loesung = n * a.faktor;
+  const v = Math.random() < 0.5 ? "A" : "B";
+  const frage = { id: `${EP.id}_${hid}_frage_${v}_${pad(n)}`, sprecher: "erzaehlerin", text: fuelle(a.fragen[v], w) };
+  aktuelleFrage = frage.text;
+  document.getElementById("ort").textContent = `${ab.name} · Aufgabe ${nr} von ${a.anzahl} · Stufe ${stufe}`;
+  document.getElementById("loesung").innerHTML = `${n} × ${a.faktor} = <em>${loesung}</em>`;
+  zeigeZaehlbild(a.tier, n);
+  await sage(frage); pruefeAbbruch();
+  let versuch = 0, t0 = performance.now();
+  while (true) {
+    const e = await warteAufKind(); pruefeAbbruch();
+    if (e.art === "wiederholen") { log("wiederholt", { abschnitt: hid, aufgabe: nr }); await sage(frage); pruefeAbbruch(); t0 = performance.now(); continue; }
+    versuch++;
+    const richtig = e.art === "zahl" && e.wert === loesung;
+    log("antwort", { abschnitt: hid, aufgabe: nr, stufe, anzahl: n, faktor: a.faktor, loesung, eingabe: e.art,
+      wert: e.wert ?? null, richtig, versuch, sekunden: Math.round((performance.now() - t0) / 100) / 10 });
+    if (richtig) {
+      rueckmeldung(`${e.wert} · Richtig`, "var(--richtig)");
+      const k = 1 + Math.floor(Math.random() * a.lob.length);
+      await sage({ id: `${EP.id}_${hid}_lob_${k}`, sprecher: a.lobSprecher, text: a.lob[k - 1] });
+      versteckeZaehlbild(); passeAn(versuch === 1, true); return;
+    }
+    rueckmeldung(e.art === "zahl" ? `${e.wert} ist falsch` : (e.art === "weiss_nicht" ? "Weiß nicht" : "Keine Antwort"), "var(--falsch)");
+    if (versuch === 1) {
+      await sage({ id: `${EP.id}_${hid}_tipp`, sprecher: a.loesungSprecher, text: a.tipp }); pruefeAbbruch();
+      t0 = performance.now(); continue;
+    }
+    if (S.zaehlbilder) zaehleMit(a.faktor);
+    await sage({ id: `${EP.id}_${hid}_loesung_${pad(n)}`, sprecher: a.loesungSprecher, text: fuelle(a.loesung, w) });
+    versteckeZaehlbild(); passeAn(false, false); return;
+  }
+}
+
+async function abschnitt(ab) {
+  log("abschnitt", { name: ab.id });
+  document.getElementById("ort").textContent = ab.name;
+  document.getElementById("loesung").innerHTML = "&nbsp;";
+  zeigeBild(ab.bild);
+  for (const z of ab.zeilen) {
+    pruefeAbbruch();
+    (ab.bildwechsel || []).forEach(b => { if (ab.zeilen.indexOf(z) >= 2) zeigeBild(b.bild); });
+    await sage(z);
+  }
+  pruefeAbbruch();
+  if (ab.typ === "hindernis") for (let i = 1; i <= ab.aufgabe.anzahl; i++) { await aufgabe(ab, i); pruefeAbbruch(); }
+}
+
+async function episode() {
+  try {
+    for (const ab of EP.abschnitte) { await abschnitt(ab); pruefeAbbruch(); await warte(500); }
+    log("ende", { grund: "fertig" });
+  } catch (e) {
+    if (!(e instanceof Abbruch)) { console.error(e); log("fehler", { text: String(e) }); }
+    log("ende", { grund: "abgebrochen" });
+  }
+  zeigeEnde();
+}
+
+function zeigeEnde() {
+  versteckeZaehlbild();
+  setzeModus(false); document.getElementById("pille").textContent = "Beendet";
+  const ant = S.log.filter(e => e.ereignis === "antwort");
+  const erste = ant.filter(e => e.versuch === 1), sofort = erste.filter(e => e.richtig);
+  const dauer = S.log[S.log.length - 1].t;
+  const schnitt = erste.length ? (erste.reduce((s, e) => s + e.sekunden, 0) / erste.length).toFixed(1).replace(".", ",") : "–";
+  const abgebrochen = S.log.some(e => e.grund === "abgebrochen");
+  document.getElementById("endeTitel").textContent = (abgebrochen ? "Abgebrochen" : "Episode beendet") + " · " + S.kind;
+  document.getElementById("endeZahlen").innerHTML =
+    `<div class="zahl"><b>${(dauer / 60).toFixed(1).replace(".", ",")}</b><span>Minuten</span></div>` +
+    `<div class="zahl"><b>${sofort.length}/${erste.length}</b><span>sofort richtig</span></div>` +
+    `<div class="zahl"><b>${schnitt} s</b><span>Ø Antwortzeit</span></div>`;
+  document.getElementById("endeNotizen").innerHTML = S.log.filter(e => e.ereignis === "notiz")
+    .map(e => `<li>${(e.t / 60).toFixed(1).replace(".", ",")} Min.: ${e.text.replace(/</g, "&lt;")}</li>`).join("");
+  document.getElementById("protokoll").value = JSON.stringify({ kind: S.kind, episode: EP.id, startstufe: S.startstufe, log: S.log }, null, 1);
+  endDialog.hidden = false;
+  document.getElementById("sprechen").disabled = false;
+  spielzahl.value = "";
+  voice.startAutomatic();
+}
+
+/* ---------- Bedienung ---------- */
+function starte() {
+  if (startDialog.hidden) return;
+  voice.reset();
+  endDialog.hidden = true;
+  const kind = document.getElementById("kind").value.trim() || "K00";
+  const stufe = parseInt(document.getElementById("stufe").value, 10);
+  document.body.classList.toggle("untertitel", document.getElementById("ut").checked);
+  S = { kind, startstufe: stufe, stufe, folge: 0, gestellt: new Set(), log: [], start: performance.now(), abbruch: false,
+        zaehlbilder: document.getElementById("zb").checked };
+  log("start", { kind, episode: EP.id, stufe });
+  document.getElementById("start").hidden = true;
+  setzeModus(false);
+  if (window.speechSynthesis) speechSynthesis.speak(new SpeechSynthesisUtterance("")); // Ton freischalten
+  episode();
+}
+document.getElementById("los").addEventListener("click", starte);
+document.getElementById("block").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  aktion(b.dataset.a, b.dataset.z);
+});
+function notiz() {
+  const f = document.getElementById("notiz"), t = f.value.trim();
+  if (!S || !t) return;
+  log("notiz", { text: t, ort: document.getElementById("ort").textContent });
+  f.value = ""; f.blur(); rueckmeldung("Notiz gespeichert", "var(--meer)");
+}
+document.getElementById("notizOk").addEventListener("click", notiz);
+document.getElementById("notiz").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); notiz(); } if (e.key === "Escape") e.target.blur(); });
+document.getElementById("skip").addEventListener("click", () => stopp && stopp());
+function panelUmschalten() {
+  document.body.classList.toggle("panel-aus");
+  document.documentElement.style.setProperty("--panelhoehe", document.body.classList.contains("panel-aus") ? "0px" : document.getElementById("panel").offsetHeight + "px");
+}
+document.getElementById("aus").addEventListener("click", panelUmschalten);
+document.getElementById("zeigen").addEventListener("click", panelUmschalten);
+async function vollbild() {
+  try { document.fullscreenElement ? await document.exitFullscreen() : await document.documentElement.requestFullscreen(); }
+  catch { rueckmeldung("Vollbild hier nicht erlaubt", "var(--falsch)"); }
+}
+document.getElementById("voll").addEventListener("click", vollbild);
+document.getElementById("abbruch").addEventListener("click", () => { if (!S) return; S.abbruch = true; stopp && stopp(); wartet && wartet({ art: "abbruch" }); });
+document.getElementById("kopieren").addEventListener("click", async () => {
+  const t = document.getElementById("protokoll");
+  try { await navigator.clipboard.writeText(t.value); rueckmeldung("Kopiert", "var(--meer)"); }
+  catch { t.select(); rueckmeldung("Bitte mit Cmd+C kopieren", "var(--falsch)"); }
+});
+document.getElementById("neu").addEventListener("click", () => {
+  voice.reset(); endDialog.hidden = true; startDialog.hidden = false; voice.startAutomatic();
+});
+document.addEventListener("keydown", e => {
+  if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if ((k === "Enter" || k === " ") && !e.target.closest("input, select, textarea, button, a")) {
+    if (!startDialog.hidden) starte();
+    else if (wartet && eingabeText) aktion("ok");
+    else if (wartet || !endDialog.hidden) voice.startManual();
+    e.preventDefault();
+    return;
+  }
+  if (!S || e.target.matches("input, select, textarea") || ((k === "Enter" || k === " ") && e.target.closest("button, a"))) return;
+  if (/^[0-9]$/.test(k)) aktion(undefined, k);
+  else if (k === "Backspace") aktion("loeschen");
+  else if (k === "Enter") aktion("ok");
+  else if (k === "?" || k === "ß") aktion("weissnicht");
+  else if (k === "w" || k === "W") aktion("wiederholen");
+  else if (k === "s" || k === "S") stopp && stopp();
+  else if (k === "n" || k === "N") { e.preventDefault(); document.getElementById("notiz").focus(); }
+  else if (k === "p" || k === "P") panelUmschalten();
+  else if (k === "t" || k === "T") document.body.classList.toggle("untertitel");
+  else if (k === "f" || k === "F") vollbild();
+  else return;
+  e.preventDefault();
+});
+new ResizeObserver(() => { if (!document.body.classList.contains("panel-aus")) document.documentElement.style.setProperty("--panelhoehe", document.getElementById("panel").offsetHeight + "px"); }).observe(document.getElementById("panel"));
+setzeModus(false); document.getElementById("pille").textContent = "Bereit";
+zeigeBild("B1a");
+pruefeBilder().then(() => { aktuellesBild = null; zeigeBild("B1a"); });
+pruefeSprites();
+voice.startAutomatic();
+</script>
+</body>
+</html>
