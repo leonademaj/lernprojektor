@@ -31,12 +31,14 @@ const messages = {
   "network": "Die Spracherkennung ist gerade nicht erreichbar. Du kannst deine Antwort eintippen.",
 };
 
-export function connectVoice(form, input, stopPlayback) {
+export function connectVoice(form, input, { stopPlayback, isReady }) {
   const button = form.querySelector(".voice-button");
   const status = form.querySelector(".voice-status");
   const note = form.querySelector(".voice-note");
+  const automaticButton = document.querySelector("[data-automatic-voice]");
   const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   let active = null;
+  let automatic = false;
 
   function finish(session) {
     if (active !== session) return false;
@@ -62,41 +64,44 @@ export function connectVoice(form, input, stopPlayback) {
 
   if (!Recognition) {
     status.textContent = "Spracheingabe ist in diesem Browser nicht verfügbar. Tippe deine Antwort ein.";
-    return { cancel, reset };
+    return { cancel, reset, startAutomatic() {} };
   }
   button.hidden = false;
   note.hidden = false;
 
-  button.addEventListener("click", () => {
-    if (active) {
-      cancel();
-      return;
-    }
-    if (form.hidden) return;
-    stopPlayback();
+  function start(automaticStart = false) {
+    if (active || form.hidden) return;
+    if (!automaticStart) stopPlayback();
     const recognition = new Recognition();
     recognition.lang = "de-DE";
     recognition.interimResults = false;
     recognition.continuous = false;
-    const session = { recognition };
+    const session = { recognition, automaticStart };
     active = session;
     button.textContent = "Aufnahme abbrechen";
     button.setAttribute("aria-pressed", "true");
-    status.textContent = "Sag eine Zahl von 0 bis 100.";
+    status.textContent = "Mikrofon wird gestartet …";
+    recognition.onaudiostart = () => {
+      if (active === session) status.textContent = "Ich höre zu. Sag deine Antwort.";
+    };
 
     recognition.onresult = (event) => {
       if (!finish(session)) return;
       const value = spokenNumber(event.results[event.resultIndex][0].transcript);
+      if (form.hidden) return;
       if (value === null) {
         status.textContent = "Ich habe keine eindeutige Zahl verstanden. Versuche es noch einmal.";
         return;
       }
       input.value = String(value);
-      status.textContent = `${value} erkannt. Stimmt die Zahl? Drücke Prüfen.`;
-      form.querySelector('button[type="submit"]').focus();
+      form.dataset.spokenAnswer = String(value);
+      form.requestSubmit();
     };
     recognition.onerror = (event) => {
       if (!finish(session)) return;
+      if (["not-allowed", "service-not-allowed", "audio-capture"].includes(event.error)) {
+        setAutomatic(false);
+      }
       status.textContent = messages[event.error] ?? "Die Spracherkennung ist gerade nicht verfügbar. Tippe deine Antwort ein.";
     };
     recognition.onend = () => {
@@ -113,11 +118,32 @@ export function connectVoice(form, input, stopPlayback) {
       recognition.start();
     } catch {
       finish(session);
+      if (session.automaticStart) setAutomatic(false);
       status.textContent = "Die Spracheingabe konnte nicht starten. Tippe deine Antwort ein.";
     }
-  });
+  }
 
+  function setAutomatic(enabled) {
+    automatic = enabled;
+    automaticButton.setAttribute("aria-pressed", String(enabled));
+    automaticButton.textContent = enabled ? "Auto-Mikrofon aus" : "Auto-Mikrofon an";
+  }
+
+  function startAutomatic() {
+    if (automatic && isReady()) start(true);
+  }
+
+  automaticButton.hidden = false;
+  automaticButton.addEventListener("click", () => {
+    setAutomatic(!automatic);
+    if (automatic) startAutomatic();
+    else cancel();
+  });
+  button.addEventListener("click", () => {
+    if (active) cancel();
+    else start();
+  });
   input.addEventListener("input", reset);
   window.addEventListener("pagehide", cancel);
-  return { cancel, reset };
+  return { cancel, reset, startAutomatic };
 }

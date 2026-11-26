@@ -27,9 +27,20 @@ const feedbackCopy = {
 
 let story;
 let position = 0;
-const voice = connectVoice(form, answer, () => {
-  audio.pause();
-  video.pause();
+function narrationMedia() {
+  if (!video.hidden) return video;
+  return audio.hidden ? null : audio;
+}
+const voice = connectVoice(form, answer, {
+  stopPlayback: () => {
+    audio.pause();
+    video.pause();
+  },
+  isReady: () => {
+    const narration = narrationMedia();
+    return !sceneBody.hidden && !form.hidden && !answer.value &&
+      (!narration || narration.ended) && (audio.hidden || audio.paused) && (video.hidden || video.paused);
+  },
 });
 
 function setMedia(element, source) {
@@ -56,6 +67,7 @@ function mediaFailed(element, message) {
   if (element === video) image.hidden = !image.getAttribute("src");
   placeholder.hidden = !video.hidden || !image.hidden;
   mediaNote.textContent = [mediaNote.textContent, message].filter(Boolean).join(" ");
+  voice.startAutomatic();
 }
 
 image.addEventListener("error", () => {
@@ -76,13 +88,17 @@ audio.addEventListener("play", () => {
   video.pause();
 });
 
+video.addEventListener("ended", voice.startAutomatic);
+audio.addEventListener("ended", voice.startAutomatic);
+
 function renderAnswer() {
   const task = story.szenen[position].aufgabe;
-  const result = states.get(position)?.feedback;
+  const state = states.get(position);
+  const result = state?.feedback;
   form.hidden = !task || Boolean(result?.advance);
   next.hidden = Boolean(task && !result?.advance);
   feedback.dataset.kind = result?.kind ?? "";
-  feedback.textContent = result?.text ?? "";
+  feedback.textContent = state?.spokenAnswer ? `${state.spokenAnswer} erkannt. ${result.text}` : result?.text ?? "";
 }
 
 function showScene() {
@@ -99,6 +115,7 @@ function showScene() {
   renderMedia(scene);
   renderAnswer();
   sceneTitle.focus({ preventScroll: true });
+  voice.startAutomatic();
 }
 
 function showFinish() {
@@ -120,7 +137,8 @@ form.addEventListener("submit", (event) => {
   voice.reset();
   const current = states.get(position) ?? initialRound();
   const updated = evaluateAnswer(current, { ...scene.aufgabe, op: "×" }, answer.value, feedbackCopy);
-  states.set(position, updated);
+  states.set(position, { ...updated, spokenAnswer: form.dataset.spokenAnswer });
+  delete form.dataset.spokenAnswer;
   answer.value = "";
   renderAnswer();
   if (updated.feedback.advance) next.focus();

@@ -25,7 +25,12 @@ let soundEnabled = false;
 let soundPreferenceChosen = false;
 let lastSpokenText = "";
 let currentChapterVideoSrc = "";
-const voice = connectVoice(form, answer, stopSpeech);
+let utterancePlaying = null;
+let speechTimeout;
+const voice = connectVoice(form, answer, {
+  stopPlayback: stopSpeech,
+  isReady: () => !game.hidden && !form.hidden && !utterancePlaying && !answer.value,
+});
 
 function updateSoundUI() {
   sound.setAttribute("aria-pressed", String(soundEnabled));
@@ -49,16 +54,21 @@ async function enableSound() {
 }
 
 function stopSpeech() {
+  utterancePlaying = null;
+  clearTimeout(speechTimeout);
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
   }
   replayAudio.classList.remove("speaking");
 }
 
-function speak(text) {
+function speak(text, after = () => {}) {
   lastSpokenText = text;
   updateSoundUI();
-  if (!soundEnabled || !("speechSynthesis" in window) || !text) return;
+  if (!soundEnabled || !("speechSynthesis" in window) || !text) {
+    after();
+    return;
+  }
 
   voice.cancel();
   stopSpeech();
@@ -72,10 +82,18 @@ function speak(text) {
     ?? voices.find((v) => v.lang.startsWith("de"));
   if (germanVoice) utterance.voice = germanVoice;
 
-  utterance.onstart = () => replayAudio.classList.add("speaking");
-  utterance.onend = () => replayAudio.classList.remove("speaking");
-  utterance.onerror = () => replayAudio.classList.remove("speaking");
-
+  utterancePlaying = utterance;
+  function finishSpeaking() {
+    if (utterancePlaying !== utterance) return;
+    stopSpeech();
+    after();
+  }
+  utterance.onstart = () => {
+    if (utterancePlaying === utterance) replayAudio.classList.add("speaking");
+  };
+  utterance.onend = finishSpeaking;
+  utterance.onerror = finishSpeaking;
+  speechTimeout = setTimeout(finishSpeaking, 30000);
   window.speechSynthesis.speak(utterance);
 }
 
@@ -197,7 +215,7 @@ function showQuestion() {
     setStageMedia(chapterVideo, gameFallbackImg, currentChapterVideoSrc);
   }
 
-  speak(`${sceneText} ${formatEquationForSpeech(task)}`);
+  speak(`${sceneText} ${formatEquationForSpeech(task)}`, voice.startAutomatic);
   byId("chapter").focus({ preventScroll: true });
 }
 
@@ -205,7 +223,7 @@ function renderFeedback() {
   const result = round.feedback;
   const feedback = byId("feedback");
   feedback.dataset.kind = result?.kind ?? "";
-  feedback.textContent = result?.text ?? "";
+  feedback.textContent = round.spokenAnswer ? `${round.spokenAnswer} erkannt. ${result.text}` : result?.text ?? "";
   byId("stars").textContent = starCount(round.stars);
   form.hidden = Boolean(result?.advance);
   advance.hidden = !result?.advance;
@@ -234,7 +252,8 @@ form.addEventListener("submit", (event) => {
   voice.reset();
   const next = evaluateAnswer(round, tasks[round.position], answer.value);
   if (next === round) return;
-  round = next;
+  round = { ...next, spokenAnswer: form.dataset.spokenAnswer };
+  delete form.dataset.spokenAnswer;
   playEffect(round.feedback.kind);
   speak(round.feedback.text);
   answer.value = "";
@@ -269,16 +288,17 @@ sound.addEventListener("click", async () => {
   soundPreferenceChosen = true;
   if (!soundEnabled) {
     await enableSound();
-    if (lastSpokenText) speak(lastSpokenText);
+    if (lastSpokenText) speak(lastSpokenText, voice.startAutomatic);
   } else {
     soundEnabled = false;
     stopSpeech();
     updateSoundUI();
+    voice.startAutomatic();
   }
 });
 
 replayAudio.addEventListener("click", () => {
-  if (lastSpokenText) speak(lastSpokenText);
+  if (lastSpokenText) speak(lastSpokenText, voice.startAutomatic);
 });
 
 if ("speechSynthesis" in window) {
