@@ -1,3 +1,4 @@
+import { connectVoice } from "./sprache.mjs";
 import { evaluateAnswer, initialRound } from "./spiel.mjs";
 
 const byId = (id) => document.getElementById(id);
@@ -26,6 +27,10 @@ const feedbackCopy = {
 
 let story;
 let position = 0;
+const voice = connectVoice(form, answer, () => {
+  audio.pause();
+  video.pause();
+});
 
 function setMedia(element, source) {
   if (element === audio || element === video) element.pause();
@@ -62,8 +67,14 @@ image.addEventListener("error", () => {
 });
 video.addEventListener("error", () => mediaFailed(video, "Das Video ist gerade nicht verfügbar."));
 audio.addEventListener("error", () => mediaFailed(audio, "Die Tonspur ist gerade nicht verfügbar."));
-video.addEventListener("play", () => audio.pause());
-audio.addEventListener("play", () => video.pause());
+video.addEventListener("play", () => {
+  voice.cancel();
+  audio.pause();
+});
+audio.addEventListener("play", () => {
+  voice.cancel();
+  video.pause();
+});
 
 function renderAnswer() {
   const task = story.szenen[position].aufgabe;
@@ -75,6 +86,7 @@ function renderAnswer() {
 }
 
 function showScene() {
+  voice.reset();
   const scene = story.szenen[position];
   finish.hidden = true;
   sceneBody.hidden = false;
@@ -90,6 +102,7 @@ function showScene() {
 }
 
 function showFinish() {
+  voice.reset();
   renderMedia();
   sceneBody.hidden = true;
   finish.hidden = false;
@@ -104,6 +117,7 @@ form.addEventListener("submit", (event) => {
   event.preventDefault();
   const scene = story.szenen[position];
   if (!scene.aufgabe || form.hidden) return;
+  voice.reset();
   const current = states.get(position) ?? initialRound();
   const updated = evaluateAnswer(current, { ...scene.aufgabe, op: "×" }, answer.value, feedbackCopy);
   states.set(position, updated);

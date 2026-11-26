@@ -1,3 +1,4 @@
+import { connectVoice } from "./sprache.mjs";
 import { chapterIndex, evaluateAnswer, initialRound, nextRound } from "./spiel.mjs";
 
 const byId = (id) => document.getElementById(id);
@@ -24,6 +25,7 @@ let soundEnabled = false;
 let soundPreferenceChosen = false;
 let lastSpokenText = "";
 let currentChapterVideoSrc = "";
+const voice = connectVoice(form, answer, stopSpeech);
 
 function updateSoundUI() {
   sound.setAttribute("aria-pressed", String(soundEnabled));
@@ -58,6 +60,7 @@ function speak(text) {
   updateSoundUI();
   if (!soundEnabled || !("speechSynthesis" in window) || !text) return;
 
+  voice.cancel();
   stopSpeech();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "de-DE";
@@ -172,6 +175,7 @@ function starCount(number) {
 }
 
 function showQuestion() {
+  voice.reset();
   const task = tasks[round.position];
   const chapter = chapterIndex(story.kapitel, round.position);
   const place = story.kapitel[chapter];
@@ -227,6 +231,7 @@ byId("restart").addEventListener("click", begin);
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
+  voice.reset();
   const next = evaluateAnswer(round, tasks[round.position], answer.value);
   if (next === round) return;
   round = next;

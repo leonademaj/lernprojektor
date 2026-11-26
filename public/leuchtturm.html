@@ -48,7 +48,12 @@
             <label class="sr-only" for="answer">Deine Antwort</label>
             <input id="answer" inputmode="numeric" autocomplete="off" placeholder="Deine Zahl" maxlength="3">
             <button type="submit" class="main-button">Prüfen <span aria-hidden="true">→</span></button>
-          </form>
+            <div class="voice-controls">
+                <button class="sound voice-button" type="button" aria-pressed="false" aria-describedby="voice-note" hidden>🎙 Antwort sprechen</button>
+                <p id="voice-note" class="voice-note" hidden>Dein Browser kann das Gesprochene an seinen Spracherkennungsdienst senden.</p>
+                <p class="voice-status" role="status" aria-atomic="true"></p>
+              </div>
+            </form>
           <button type="button" class="main-button" id="continue" hidden>Weiter</button>
         </div>
       </section>

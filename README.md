@@ -39,3 +39,7 @@ Für die fertige Einmaleins-Geschichte `beispiel` auf `false` setzen und Titel, 
 | `aufgabe` | Optional. Faktoren `a` und `b` von 1 bis 10, `hinweis`, `weg` sowie optional `extra_hinweis` mit Fehlwert `bei` und `text`. Die Software berechnet die Lösung als Produkt. |
 
 Szenen ohne Aufgabe lassen sich direkt weiterklicken. Bei einer Aufgabe geht es nach einer richtigen Antwort oder nach der Erklärung im zweiten Fehlversuch weiter. Beim Zurückblättern bleiben die Antworten der laufenden Runde erhalten.
+
+## Gesprochene Antworten in der Webdemo
+
+In beiden Lernpfaden öffnet **Antwort sprechen** die browserseitige Erkennung für Deutsch. Der Button startet erst beim Anklicken. Erkannte Zahlen von null bis hundert werden in das Zahlenfeld übernommen und erst über **Prüfen** bewertet. Je nach Browser kann die Aufnahme zum Dienst des Browsers übertragen werden. Die Anwendung speichert keine Audiodateien oder Transkripte. Wenn die Erkennung nicht verfügbar oder die Mikrofonfreigabe gesperrt ist, bleibt das Zahlenfeld bedienbar. Die lokale Raspberry-Pi-Version verwendet ihren eigenen Sprachmodus.

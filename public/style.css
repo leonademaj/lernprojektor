@@ -142,3 +142,9 @@ footer { margin: 22px 0; color: var(--muted); font-size: .85rem; }
   .path-grid, .lesson-player { grid-template-columns: 1fr; }
   .lesson-media .times-art { min-height: 170px; }
 }
+
+.voice-controls { flex-basis: 100%; }
+.voice-button[aria-pressed="true"] { border-color: #9c493f; background: #ffefe5; color: #743d30; }
+.voice-note, .voice-status { margin: 7px 0 0; font-size: .86rem; color: var(--muted); max-width: 48ch; }
+.voice-status { color: var(--teal); font-weight: 750; }
+.voice-status:empty { margin: 0; }
