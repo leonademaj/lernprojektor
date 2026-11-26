@@ -139,6 +139,22 @@ body.panel-aus #zeigen { display: block; }
   .ebene, #panel { transition: none; }
   .pille.dran { animation: none; }
 }
+
+.episodenbild { display: block; width: 100%; height: clamp(75px, 15vh, 145px); object-fit: cover; object-position: 50% 44%; border-radius: 10px; }
+.test-details { border-top: 1px solid var(--linie); padding-top: 12px; }
+.test-details summary { color: var(--leise); cursor: pointer; font-weight: 700; }
+.test-details > :not(summary) { margin-top: 12px; }
+#fortschritt { position: fixed; z-index: 7; left: 12px; bottom: 12px; margin: 0; padding: 7px 12px; border-radius: 9px;
+  background: var(--flaeche); color: var(--text); font-weight: 700; }
+body:not(.panel-aus) #fortschritt { bottom: calc(var(--panelhoehe, 0px) + 8px); }
+body:not(.panel-aus) #spielantwort { bottom: calc(var(--panelhoehe, 0px) + 48px); }
+#antwortphase { margin: 0; color: var(--meer); font-weight: 800; }
+#lern-nav > button:disabled { display: none; }
+#rueck.zeigen { font-size: clamp(1rem, 2.8vw, 1.5rem); }
+@media (max-width: 600px) {
+  #rueck { top: 66px; right: 12px; }
+  #spielantwort { bottom: 58px; }
+}
 </style>
 </head>
 <body class="panel-aus">
@@ -149,14 +165,17 @@ body.panel-aus #zeigen { display: block; }
   <div id="untertitel"></div>
 </div>
 <div id="rueck" role="status"></div>
+<p id="fortschritt" hidden></p>
 <nav id="lern-nav" aria-label="Lernprojektor">
   <a class="zweit link" href="../">← Zur Auswahl</a>
   <button class="zweit" id="automatik" type="button" aria-pressed="false" aria-describedby="sprachhinweis" hidden>Sprachsteuerung an</button>
   <button class="zweit" id="sprechen" type="button" aria-pressed="false" aria-describedby="sprachhinweis" hidden>🎙 Sprechen</button>
+  <button class="zweit" id="pause" type="button" hidden>Erzählung pausieren</button>
   <p id="sprachstatus" role="status" aria-live="polite"></p>
   <span id="sprachhinweis" hidden>Dein Browser kann Gesprochenes an seinen Spracherkennungsdienst senden.</span>
 </nav>
 <form id="spielantwort" hidden>
+  <p id="antwortphase">Du bist dran</p>
   <p id="spielfrage"></p>
   <div class="reihe">
     <input id="spielzahl" aria-label="Deine Antwort" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" placeholder="Deine Zahl" required>
@@ -167,8 +186,12 @@ body.panel-aus #zeigen { display: block; }
 
 <section class="dialog" id="start">
   <div class="karte">
-    <h1><small>Lernbox-Prototyp · Episode 1</small>Pip will nach Hause</h1>
-    <p>Fino und Pip auf dem Weg zum Hafen. Drei Hindernisse mit Zweier-, Fünfer- und Zehnerreihe. Du kannst die Antworten sprechen oder eintippen. Für begleitete Tests gibt es ein eigenes Bedienfeld.</p>
+    <img class="episodenbild" src="bilder/B1.jpg" alt="">
+    <h1><small>Fino und Pip · Kleines Einmaleins</small>Pip will nach Hause</h1>
+    <p>Pip hat sich verirrt. Hilf Fino, ihn zum Hafen zu bringen. Die Möwen, Seesterne und Krebse brauchen deine Hilfe beim Zählen.</p>
+    <button class="haupt" id="los">Episode starten</button>
+    <details class="test-details">
+    <summary>Optionen für das Testteam</summary>
     <div class="felder">
       <label class="feld" for="kind">Kind (Pseudonym, kein Name)
         <input id="kind" value="K01" autocomplete="off">
@@ -184,31 +207,36 @@ body.panel-aus #zeigen { display: block; }
     <label class="check" for="zb"><input type="checkbox" id="zb" checked> Zählbilder bei den Aufgaben zeigen (für die Variante „nur Audio“ aus)</label>
     <label class="check" for="ut"><input type="checkbox" id="ut"> Untertitel auf der Bühne zeigen (für Kinder aus lassen)</label>
     <div class="bestand" id="bestand">Prüfe Bilder …</div>
-    <button class="haupt" id="los">Episode starten</button>
     <div class="tasten">
       <kbd>0–9</kbd> Zahl · <kbd>Enter</kbd> bestätigen (leer = keine Antwort) · <kbd>?</kbd> weiß nicht · <kbd>W</kbd> wiederholen ·
-      <kbd>S</kbd> Ton überspringen · <kbd>N</kbd> Notiz · <kbd>P</kbd> Bedienfeld aus/an · <kbd>T</kbd> Untertitel · <kbd>F</kbd> Vollbild
+      <kbd>Leertaste</kbd> Pause beim Erzählen · <kbd>S</kbd> Ton überspringen · <kbd>N</kbd> Notiz · <kbd>P</kbd> Bedienfeld aus/an · <kbd>T</kbd> Untertitel · <kbd>F</kbd> Vollbild
     </div>
+    </details>
   </div>
 </section>
 
 <section class="dialog" id="ende" hidden>
   <div class="karte">
-    <h1><small>Auswertung</small><span id="endeTitel">Episode beendet</span></h1>
-    <div class="zahlen" id="endeZahlen"></div>
-    <ol class="notizliste" id="endeNotizen"></ol>
-    <label class="feld" for="protokoll">Protokoll (JSON) zum Kopieren
-      <textarea id="protokoll" readonly></textarea>
-    </label>
+    <h1 id="endeSpiel" tabindex="-1">Geschafft!</h1>
+    <p id="endeErfolg"></p>
     <div class="reihe">
-      <button class="haupt" id="kopieren">Protokoll kopieren</button>
-      <button class="zweit" id="neu">Neu starten</button>
+      <button class="haupt" id="neu">Noch einmal spielen</button>
       <a class="zweit link" href="../">Zur Auswahl</a>
     </div>
+    <details class="test-details">
+      <summary>Auswertung für das Testteam</summary>
+      <p id="endeTitel"></p>
+      <div class="zahlen" id="endeZahlen"></div>
+      <ol class="notizliste" id="endeNotizen"></ol>
+      <label class="feld" for="protokoll">Protokoll (JSON)
+        <textarea id="protokoll" readonly></textarea>
+      </label>
+      <button class="zweit" id="kopieren">Protokoll kopieren</button>
+    </details>
   </div>
 </section>
 
-<section id="panel" aria-label="Bedienfeld für das Testteam">
+<section id="panel" inert aria-label="Bedienfeld für das Testteam">
   <div class="status">
     <span class="pille" id="pille">Bereit</span>
     <div class="ort" id="ort">–</div>
@@ -240,7 +268,7 @@ body.panel-aus #zeigen { display: block; }
     </div>
   </div>
 </section>
-<button class="zweit" id="zeigen">Bedienfeld</button>
+<button class="zweit" id="zeigen" aria-controls="panel" aria-expanded="false">Testteam</button>
 
 <script type="module">
 import { connectRecognition, spokenNumber, voiceCommand } from "../sprache.mjs";
@@ -298,7 +326,30 @@ function fuelle(vorlage, w) { return vorlage.replace(/\{(\w+)\}/g, (_, k) => w[k
 const STIMMLAGE = { erzaehlerin:{p:1,r:.95}, fino:{p:1.2,r:1}, pip:{p:1.45,r:1.08}, kreischi:{p:1.6,r:1.15},
   oma_stella:{p:.85,r:.85}, knut:{p:.6,r:.92}, ottilie:{p:.8,r:.98} };
 const SPRECHER = { erzaehlerin:"Erzählerin", fino:"Fino", pip:"Pip", kreischi:"Kreischi", oma_stella:"Oma Stella", knut:"Knut", ottilie:"Kapitänin Ottilie" };
-let stimme = null, stopp = null;
+let stimme = null, stopp = null, wiedergabe = null;
+const pauseTaste = document.getElementById("pause");
+const fortschritt = document.getElementById("fortschritt");
+const gesamtAufgaben = EP.abschnitte.reduce((summe, abschnitt) => summe + (abschnitt.aufgabe?.anzahl ?? 0), 0);
+
+function zeigeWiedergabe() {
+  pauseTaste.hidden = !wiedergabe;
+  pauseTaste.textContent = wiedergabe?.pausiert ? "Erzählung fortsetzen" : "Erzählung pausieren";
+}
+
+function setzeWiedergabe(pause, weiter) {
+  wiedergabe = pause ? { pause, weiter, pausiert: false } : null;
+  zeigeWiedergabe();
+}
+
+function erzaehlungUmschalten() {
+  if (!wiedergabe) return;
+  const clip = wiedergabe;
+  clip.pausiert = !clip.pausiert;
+  zeigeWiedergabe();
+  if (clip.pausiert) clip.pause();
+  else clip.weiter();
+}
+pauseTaste.addEventListener("click", erzaehlungUmschalten);
 function waehleStimme() {
   const alle = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
   const de = alle.filter(v => /^de/i.test(v.lang));
@@ -307,31 +358,49 @@ function waehleStimme() {
 if (window.speechSynthesis) { waehleStimme(); speechSynthesis.onvoiceschanged = waehleStimme; }
 const warte = ms => new Promise(r => setTimeout(r, ms));
 
-function spieleDatei(src, onZeit) {
+function spieleDatei(src) {
   return new Promise(ok => {
     const a = new Audio(src);
     let fertig = false;
-    const ende = erfolg => { if (fertig) return; fertig = true; stopp = null; a.pause(); ok(erfolg); };
+    const ende = erfolg => { if (fertig) return; fertig = true; stopp = null; setzeWiedergabe(); a.pause(); ok(erfolg); };
     a.addEventListener("ended", () => ende(true));
     a.addEventListener("error", () => ende(false));
-    if (onZeit) a.addEventListener("timeupdate", () => onZeit(a.currentTime));
+    const weiter = () => a.play().catch((fehler) => {
+      if (fehler.name !== "AbortError" || !wiedergabe?.pausiert) ende(false);
+    });
+    setzeWiedergabe(() => a.pause(), weiter);
     stopp = () => ende(true);
-    a.play().catch(() => ende(false));
+    weiter();
   });
 }
 function sprich(text, sprecher) {
   return new Promise(ok => {
-    if (!window.speechSynthesis) { stopp = () => ok(); setTimeout(ok, 600 + text.length * 55); return; }
+    if (!window.speechSynthesis) {
+      const ende = () => { clearTimeout(timer); stopp = null; ok(); };
+      const timer = setTimeout(ende, 600 + text.length * 55);
+      stopp = ende;
+      return;
+    }
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     const s = STIMMLAGE[sprecher] || STIMMLAGE.erzaehlerin;
     u.lang = "de-DE"; if (stimme) u.voice = stimme; u.pitch = s.p; u.rate = s.r;
     let fertig = false;
-    const ende = () => { if (fertig) return; fertig = true; stopp = null; ok(); };
+    let timer;
+    const ende = () => {
+      if (fertig) return;
+      fertig = true;
+      clearTimeout(timer);
+      setzeWiedergabe();
+      stopp = null;
+      ok();
+    };
+    const begrenzeDauer = () => { timer = setTimeout(() => { speechSynthesis.cancel(); ende(); }, 4000 + text.length * 120); };
+    setzeWiedergabe(() => { clearTimeout(timer); speechSynthesis.pause(); }, () => { begrenzeDauer(); speechSynthesis.resume(); });
     u.onend = ende; u.onerror = ende;
     stopp = () => { speechSynthesis.cancel(); ende(); };
+    begrenzeDauer();
     speechSynthesis.speak(u);
-    setTimeout(ende, 4000 + text.length * 120); // Sicherheitsnetz, falls onend ausbleibt
   });
 }
 async function sage(zeile) {
@@ -513,6 +582,8 @@ async function aufgabe(ab, nr) {
   const v = Math.random() < 0.5 ? "A" : "B";
   const frage = { id: `${EP.id}_${hid}_frage_${v}_${pad(n)}`, sprecher: "erzaehlerin", text: fuelle(a.fragen[v], w) };
   aktuelleFrage = frage.text;
+  S.aufgaben++;
+  fortschritt.textContent = `Aufgabe ${S.aufgaben} von ${gesamtAufgaben}`;
   document.getElementById("ort").textContent = `${ab.name} · Aufgabe ${nr} von ${a.anzahl} · Stufe ${stufe}`;
   document.getElementById("loesung").innerHTML = `${n} × ${a.faktor} = <em>${loesung}</em>`;
   zeigeZaehlbild(a.tier, n);
@@ -544,6 +615,7 @@ async function aufgabe(ab, nr) {
 
 async function abschnitt(ab) {
   log("abschnitt", { name: ab.id });
+  fortschritt.textContent = ab.aufgabe ? ab.name.split(" · ")[1] : ab.id === "ab" ? "Im Hafen" : "Fino und Pip";
   document.getElementById("ort").textContent = ab.name;
   document.getElementById("loesung").innerHTML = "&nbsp;";
   zeigeBild(ab.bild);
@@ -575,6 +647,11 @@ function zeigeEnde() {
   const dauer = S.log[S.log.length - 1].t;
   const schnitt = erste.length ? (erste.reduce((s, e) => s + e.sekunden, 0) / erste.length).toFixed(1).replace(".", ",") : "–";
   const abgebrochen = S.log.some(e => e.grund === "abgebrochen");
+  const geschafft = ant.filter(e => e.richtig).length;
+  document.getElementById("endeSpiel").textContent = abgebrochen ? "Bis zum nächsten Mal!" : "Pip ist am Hafen!";
+  document.getElementById("endeErfolg").textContent = geschafft === 1 ? "Du hast eine Aufgabe gelöst." :
+    `Du hast ${geschafft} von ${gesamtAufgaben} Aufgaben gelöst.`;
+  fortschritt.hidden = true;
   document.getElementById("endeTitel").textContent = (abgebrochen ? "Abgebrochen" : "Episode beendet") + " · " + S.kind;
   document.getElementById("endeZahlen").innerHTML =
     `<div class="zahl"><b>${(dauer / 60).toFixed(1).replace(".", ",")}</b><span>Minuten</span></div>` +
@@ -584,6 +661,7 @@ function zeigeEnde() {
     .map(e => `<li>${(e.t / 60).toFixed(1).replace(".", ",")} Min.: ${e.text.replace(/</g, "&lt;")}</li>`).join("");
   document.getElementById("protokoll").value = JSON.stringify({ kind: S.kind, episode: EP.id, startstufe: S.startstufe, log: S.log }, null, 1);
   endDialog.hidden = false;
+  document.getElementById("endeSpiel").focus();
   document.getElementById("sprechen").disabled = false;
   spielzahl.value = "";
   voice.startAutomatic();
@@ -597,10 +675,11 @@ function starte() {
   const kind = document.getElementById("kind").value.trim() || "K00";
   const stufe = parseInt(document.getElementById("stufe").value, 10);
   document.body.classList.toggle("untertitel", document.getElementById("ut").checked);
-  S = { kind, startstufe: stufe, stufe, folge: 0, gestellt: new Set(), log: [], start: performance.now(), abbruch: false,
+  S = { kind, startstufe: stufe, stufe, folge: 0, aufgaben: 0, gestellt: new Set(), log: [], start: performance.now(), abbruch: false,
         zaehlbilder: document.getElementById("zb").checked };
   log("start", { kind, episode: EP.id, stufe });
   document.getElementById("start").hidden = true;
+  fortschritt.hidden = false;
   setzeModus(false);
   if (window.speechSynthesis) speechSynthesis.speak(new SpeechSynthesisUtterance("")); // Ton freischalten
   episode();
@@ -620,8 +699,14 @@ document.getElementById("notizOk").addEventListener("click", notiz);
 document.getElementById("notiz").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); notiz(); } if (e.key === "Escape") e.target.blur(); });
 document.getElementById("skip").addEventListener("click", () => stopp && stopp());
 function panelUmschalten() {
-  document.body.classList.toggle("panel-aus");
-  document.documentElement.style.setProperty("--panelhoehe", document.body.classList.contains("panel-aus") ? "0px" : document.getElementById("panel").offsetHeight + "px");
+  const verborgen = document.body.classList.toggle("panel-aus");
+  const panel = document.getElementById("panel");
+  const taste = document.getElementById("zeigen");
+  panel.inert = verborgen;
+  taste.setAttribute("aria-expanded", String(!verborgen));
+  document.documentElement.style.setProperty("--panelhoehe", verborgen ? "0px" : panel.offsetHeight + "px");
+  if (verborgen) taste.focus();
+  else document.getElementById("aus").focus();
 }
 document.getElementById("aus").addEventListener("click", panelUmschalten);
 document.getElementById("zeigen").addEventListener("click", panelUmschalten);
@@ -642,14 +727,20 @@ document.getElementById("neu").addEventListener("click", () => {
 document.addEventListener("keydown", e => {
   if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key;
-  if ((k === "Enter" || k === " ") && !e.target.closest("input, select, textarea, button, a")) {
+  const bedienelement = e.target.closest("input, select, textarea, button, a, summary");
+  if (wiedergabe && (k === " " || k === "Enter") && !bedienelement) {
+    e.preventDefault();
+    erzaehlungUmschalten();
+    return;
+  }
+  if ((k === "Enter" || k === " ") && !bedienelement) {
     if (!startDialog.hidden) starte();
     else if (wartet && eingabeText) aktion("ok");
     else if (wartet || !endDialog.hidden) voice.startManual();
     e.preventDefault();
     return;
   }
-  if (!S || e.target.matches("input, select, textarea") || ((k === "Enter" || k === " ") && e.target.closest("button, a"))) return;
+  if (!S || e.target.matches("input, select, textarea") || ((k === "Enter" || k === " ") && bedienelement)) return;
   if (/^[0-9]$/.test(k)) aktion(undefined, k);
   else if (k === "Backspace") aktion("loeschen");
   else if (k === "Enter") aktion("ok");
