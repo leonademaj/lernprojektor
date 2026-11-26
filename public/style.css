@@ -148,3 +148,5 @@ footer { margin: 22px 0; color: var(--muted); font-size: .85rem; }
 .voice-note, .voice-status { margin: 7px 0 0; font-size: .86rem; color: var(--muted); max-width: 48ch; }
 .voice-status { color: var(--teal); font-weight: 750; }
 .voice-status:empty { margin: 0; }
+
+main > .voice-controls { margin: 14px 0 0; }

@@ -14,12 +14,12 @@
     <header class="top">
       <a class="brand back-link" href="./"><span class="brand-icon" aria-hidden="true">←</span><span>Zur Lernpfad-Auswahl</span></a>
       <div class="audio-controls">
-        <button class="sound" type="button" data-automatic-voice aria-pressed="false" aria-describedby="auto-voice-info" hidden>Auto-Mikrofon an</button>
+        <button class="sound" type="button" data-automatic-voice aria-pressed="false" aria-describedby="auto-voice-info" hidden>Sprachsteuerung an</button>
         <button class="sound" id="replay-audio" type="button" hidden>🔊 Nochmal vorlesen</button>
         <button class="sound" id="sound" type="button" aria-pressed="false">🔇 Ton aus</button>
       </div>
     </header>
-    <p id="auto-voice-info" class="sr-only">Wenn du das Auto-Mikrofon einschaltest, startet es nach der Aufgabe. Dein Browser kann Gesprochenes an seinen Spracherkennungsdienst senden.</p>
+    <p id="auto-voice-info" class="sr-only">Mit der Sprachsteuerung startet das Mikrofon nach der Ansage, wenn eine Antwort oder ein Befehl möglich ist. Dein Browser kann Gesprochenes an seinen Spracherkennungsdienst senden.</p>
     <main>
       <section class="hero" id="intro" aria-labelledby="intro-title">
         <div class="hero-copy">
@@ -50,11 +50,6 @@
             <label class="sr-only" for="answer">Deine Antwort</label>
             <input id="answer" inputmode="numeric" autocomplete="off" placeholder="Deine Zahl" maxlength="3">
             <button type="submit" class="main-button">Prüfen <span aria-hidden="true">→</span></button>
-            <div class="voice-controls">
-                <button class="sound voice-button" type="button" aria-pressed="false" aria-describedby="voice-note" hidden>🎙 Antwort sprechen</button>
-                <p id="voice-note" class="voice-note" hidden>Dein Browser kann das Gesprochene an seinen Spracherkennungsdienst senden.</p>
-                <p class="voice-status" role="status" aria-atomic="true"></p>
-              </div>
             </form>
           <button type="button" class="main-button" id="continue" hidden>Weiter</button>
         </div>
@@ -81,6 +76,11 @@
           <li><span class="stop-icon light" aria-hidden="true">✦</span><div><strong>Im Leuchtturm</strong><p>Das Licht wieder einschalten</p></div></li>
         </ol>
       </section>
+      <div class="voice-controls">
+                <button class="sound voice-button" type="button" aria-pressed="false" aria-describedby="voice-note" hidden>🎙 Sprechen</button>
+                <p id="voice-note" class="voice-note" hidden>Dein Browser kann das Gesprochene an seinen Spracherkennungsdienst senden.</p>
+                <p class="voice-status" role="status" aria-atomic="true"></p>
+              </div>
     </main>
     <footer>Plus und Minus bis 100 <span aria-hidden="true">·</span> Ein Lernprojekt der OTH Regensburg</footer>
   </div>

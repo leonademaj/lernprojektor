@@ -1,4 +1,4 @@
-import { connectVoice, narrationText } from "./sprache.mjs";
+import { connectVoice, narrationText, registerActionKey } from "./sprache.mjs";
 import { createNarrator } from "./vorlesen.mjs";
 import { chapterIndex, evaluateAnswer, initialRound, nextRound } from "./spiel.mjs";
 
@@ -26,12 +26,15 @@ let soundEnabled = false;
 let soundPreferenceChosen = false;
 let lastSpokenParts = [];
 let currentChapterVideoSrc = "";
+let advanceTimer;
 const narrator = createNarrator(window.speechSynthesis, window.SpeechSynthesisUtterance, (speaking) => {
   replayAudio.classList.toggle("speaking", speaking);
 });
 const voice = connectVoice(form, answer, {
   stopPlayback: stopSpeech,
-  isReady: () => !game.hidden && !form.hidden && !narrator.isPlaying() && !answer.value,
+  isReady: () => !start.disabled && !narrator.isPlaying() && !answer.value &&
+    (game.hidden || round.feedback?.kind !== "correct"),
+  command: handleCommand,
 });
 
 function updateSoundUI() {
@@ -198,8 +201,30 @@ function renderFeedback() {
   advance.textContent = round.position === tasks.length - 1 ? "Licht einschalten ✦" : "Weiter →";
 }
 
+function handleCommand(command) {
+  if (command === "menu" || (command === "back" && game.hidden)) {
+    window.location.assign("./");
+  } else if (command === "mute" || command === "unmute") {
+    if (soundEnabled === (command === "mute")) sound.click();
+    else voice.startAutomatic();
+  } else if (!intro.hidden && (command === "start" || command === "next" || command === "leuchtturm")) {
+    begin();
+  } else if (!finish.hidden && ["restart", "start", "repeat"].includes(command)) {
+    begin();
+  } else if (!game.hidden && command === "next" && round.feedback?.advance) {
+    goNext();
+  } else if (!game.hidden && command === "repeat") {
+    showQuestion();
+  } else {
+    return false;
+  }
+  return true;
+}
+
 async function begin() {
-  if (!tasks || !story) return;
+  if (!tasks || !story || !game.hidden) return;
+  clearTimeout(advanceTimer);
+  voice.reset();
   if (!soundPreferenceChosen) await enableSound();
   finishVideo.pause();
   round = initialRound();
@@ -222,18 +247,31 @@ form.addEventListener("submit", (event) => {
   if (next === round) return;
   round = { ...next, spokenAnswer: form.dataset.spokenAnswer };
   delete form.dataset.spokenAnswer;
-  playEffect(round.feedback.kind);
-  speak(round.feedback.text, undefined, 480);
   answer.value = "";
   renderFeedback();
+  playEffect(round.feedback.kind);
+  const completed = round;
+  if (completed.feedback.kind === "correct") {
+    const proceed = () => { if (round === completed) goNext(); };
+    advanceTimer = setTimeout(proceed, 4000);
+    speak(completed.feedback.text, () => {
+      if (round !== completed) return;
+      clearTimeout(advanceTimer);
+      advanceTimer = setTimeout(proceed, 900);
+    }, 480);
+  } else {
+    speak(completed.feedback.text, voice.startAutomatic, 480);
+  }
   if (round.feedback.advance) advance.focus();
   else answer.focus();
 });
 
-advance.addEventListener("click", () => {
+function goNext() {
+  clearTimeout(advanceTimer);
+  voice.reset();
   const next = nextRound(round);
   if (next === round) return;
-  round = next;
+  round = { ...next, spokenAnswer: undefined };
   answer.value = "";
   if (round.position < tasks.length) {
     showQuestion();
@@ -246,10 +284,16 @@ advance.addEventListener("click", () => {
     setRoute(-1, true);
     setStageMedia(finishVideo, finishFallbackImg, story.finale_video);
     playEffect("finale");
-    speak(["Das Licht ist zurück!", story.ende], undefined, 840);
+    speak(["Das Licht ist zurück!", story.ende], voice.startAutomatic, 840);
     byId("finish-title").focus({ preventScroll: true });
   }
   window.scrollTo(0, 0);
+}
+advance.addEventListener("click", goNext);
+registerActionKey(() => {
+  if (!intro.hidden) begin();
+  else if (!advance.hidden && !game.hidden) goNext();
+  else voice.startManual();
 });
 
 sound.addEventListener("click", async () => {
@@ -288,6 +332,7 @@ try {
   byId("intro-text").textContent = story.start;
   setRoute(-1);
   start.disabled = false;
+  voice.startAutomatic();
 } catch (error) {
   byId("load-note").textContent = "Das Abenteuer konnte nicht geladen werden. Lade die Seite neu.";
   console.error(error);

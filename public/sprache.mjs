@@ -43,12 +43,27 @@ const messages = {
   "network": "Die Spracherkennung ist gerade nicht erreichbar. Du kannst deine Antwort eintippen.",
 };
 
-export function connectVoice(form, input, { stopPlayback, isReady }) {
-  const button = form.querySelector(".voice-button");
-  const status = form.querySelector(".voice-status");
-  const note = form.querySelector(".voice-note");
-  const automaticButton = document.querySelector("[data-automatic-voice]");
+export function voiceCommand(text) {
+  const phrase = text.toLocaleLowerCase("de-DE").replace(/[^a-zäöüß\d ]/g, "").trim().replace(/ +/g, " ");
+  const commands = {
+    leuchtturm: ["leuchtturm", "sternleuchtturm", "sternenleuchtturm", "mika", "plus und minus", "eins", "1"],
+    einmaleins: ["einmaleins", "kleines einmaleins", "obststand", "zwei", "2"],
+    start: ["start", "starten", "los", "los gehts", "abenteuer starten"],
+    next: ["weiter", "nächste", "nächste aufgabe", "nächste szene", "licht einschalten", "geschichte abschließen"],
+    repeat: ["nochmal", "noch mal", "noch einmal", "wiederholen", "vorlesen", "abspielen"],
+    back: ["zurück", "vorherige szene"],
+    menu: ["auswahl", "zur auswahl", "menü", "hauptmenü", "zur lernpfadauswahl", "startseite"],
+    mute: ["ton aus", "leise"],
+    unmute: ["ton an"],
+    restart: ["neustart", "noch einmal spielen", "von vorne"],
+  };
+  return Object.keys(commands).find((command) => commands[command].includes(phrase));
+}
+
+export function connectRecognition({ button, status, note, automaticButton, isReady, stopPlayback, handle, prompt }) {
   const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+  const idleLabel = button.textContent.trim();
+  const storedSetting = "lernprojektor:sprachsteuerung";
   let active = null;
   let automatic = false;
 
@@ -56,7 +71,7 @@ export function connectVoice(form, input, { stopPlayback, isReady }) {
     if (active !== session) return false;
     active = null;
     clearTimeout(session.timeout);
-    button.textContent = "🎙 Antwort sprechen";
+    button.textContent = idleLabel;
     button.setAttribute("aria-pressed", "false");
     return true;
   }
@@ -75,70 +90,70 @@ export function connectVoice(form, input, { stopPlayback, isReady }) {
   }
 
   if (!Recognition) {
-    status.textContent = "Spracheingabe ist in diesem Browser nicht verfügbar. Tippe deine Antwort ein.";
-    return { cancel, reset, startAutomatic() {} };
+    status.textContent = "Spracheingabe ist in diesem Browser nicht verfügbar.";
+    return { cancel, reset, startAutomatic() {}, startManual() {} };
   }
   button.hidden = false;
   note.hidden = false;
 
   function start(automaticStart = false) {
-    if (active || form.hidden) return;
+    if (active) return;
     if (!automaticStart) stopPlayback();
     const recognition = new Recognition();
     recognition.lang = "de-DE";
     recognition.interimResults = false;
     recognition.continuous = false;
-    const session = { recognition, automaticStart };
+    const session = { recognition };
     active = session;
     button.textContent = "Aufnahme abbrechen";
     button.setAttribute("aria-pressed", "true");
     status.textContent = "Mikrofon wird gestartet …";
     recognition.onaudiostart = () => {
-      if (active === session) status.textContent = "Ich höre zu. Sag deine Antwort.";
+      if (active === session) status.textContent = prompt();
     };
 
     recognition.onresult = (event) => {
-      if (!finish(session)) return;
-      const value = spokenNumber(event.results[event.resultIndex][0].transcript);
-      if (form.hidden) return;
-      if (value === null) {
-        status.textContent = "Welche Zahl meinst du? Sag sie noch einmal, zum Beispiel: zwölf.";
-        return;
-      }
-      input.value = String(value);
-      form.dataset.spokenAnswer = String(value);
-      form.requestSubmit();
+      if (active === session) session.transcript = event.results[event.resultIndex][0].transcript;
     };
     recognition.onerror = (event) => {
       if (!finish(session)) return;
       if (["not-allowed", "service-not-allowed", "audio-capture"].includes(event.error)) {
         setAutomatic(false);
       }
-      status.textContent = messages[event.error] ?? "Die Spracherkennung ist gerade nicht verfügbar. Tippe deine Antwort ein.";
+      status.textContent = messages[event.error] ?? "Die Spracherkennung ist gerade nicht verfügbar.";
     };
+    const noSpeech = () => { status.textContent = "Ich habe dich nicht gehört. Du kannst das Mikrofon erneut starten."; };
     recognition.onend = () => {
       if (!finish(session)) return;
-      status.textContent = messages["no-speech"];
+      if (!session.transcript) {
+        noSpeech();
+        return;
+      }
+      status.textContent = "";
+      if (!handle(session.transcript)) {
+        status.textContent = "Das habe ich nicht verstanden. Versuch es noch einmal.";
+      }
     };
 
     try {
       session.timeout = setTimeout(() => {
         if (!finish(session)) return;
         recognition.abort();
-        status.textContent = messages["no-speech"];
-      }, 15000);
+        noSpeech();
+      }, 12000);
       recognition.start();
     } catch {
       finish(session);
-      if (session.automaticStart) setAutomatic(false);
-      status.textContent = "Die Spracheingabe konnte nicht starten. Tippe deine Antwort ein.";
+      if (automaticStart) setAutomatic(false);
+      status.textContent = "Die Spracheingabe konnte nicht starten. Versuche es über das Mikrofonsymbol.";
     }
   }
 
   function setAutomatic(enabled) {
     automatic = enabled;
+    try { sessionStorage.setItem(storedSetting, String(enabled)); } catch { /* Browser-Speicher ist optional. */ }
     automaticButton.setAttribute("aria-pressed", String(enabled));
-    automaticButton.textContent = enabled ? "Auto-Mikrofon aus" : "Auto-Mikrofon an";
+    automaticButton.textContent = enabled ? "Sprachsteuerung aus" : "Sprachsteuerung an";
   }
 
   function startAutomatic() {
@@ -146,16 +161,53 @@ export function connectVoice(form, input, { stopPlayback, isReady }) {
   }
 
   automaticButton.hidden = false;
+  try { automatic = sessionStorage.getItem(storedSetting) === "true"; } catch { /* Browser-Speicher ist optional. */ }
+  setAutomatic(automatic);
   automaticButton.addEventListener("click", () => {
     setAutomatic(!automatic);
     if (automatic) startAutomatic();
     else cancel();
   });
-  button.addEventListener("click", () => {
+  const startManual = () => {
     if (active) cancel();
     else start();
+  };
+  button.addEventListener("click", startManual);
+  window.addEventListener("pagehide", reset);
+  return { cancel, reset, startAutomatic, startManual };
+}
+
+export function connectVoice(form, input, { stopPlayback, isReady, command }) {
+  const voice = connectRecognition({
+    button: document.querySelector(".voice-button"),
+    status: document.querySelector(".voice-status"),
+    note: document.querySelector(".voice-note"),
+    automaticButton: document.querySelector("[data-automatic-voice]"),
+    stopPlayback,
+    isReady,
+    prompt: () => form.hidden ? "Ich höre zu. Sag zum Beispiel „Weiter“ oder „Auswahl“." :
+      "Ich höre zu. Sag deine Antwort oder einen Befehl.",
+    handle(transcript) {
+      const value = spokenNumber(transcript);
+      if (value !== null && !form.hidden) {
+        input.value = String(value);
+        form.dataset.spokenAnswer = String(value);
+        form.requestSubmit();
+        return true;
+      }
+      return command(voiceCommand(transcript));
+    },
   });
-  input.addEventListener("input", reset);
-  window.addEventListener("pagehide", cancel);
-  return { cancel, reset, startAutomatic };
+  input.addEventListener("input", voice.reset);
+  return voice;
+}
+
+export function registerActionKey(action) {
+  document.addEventListener("keydown", (event) => {
+    if (!["Enter", " "].includes(event.key) || event.repeat || event.altKey || event.ctrlKey || event.metaKey ||
+        event.target.closest("button, a, textarea, select, audio, video, [contenteditable]") ||
+        (event.target.matches("input") && (event.target.inputMode !== "numeric" || event.target.value))) return;
+    event.preventDefault();
+    action();
+  });
 }

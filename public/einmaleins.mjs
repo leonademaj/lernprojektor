@@ -1,4 +1,5 @@
-import { connectVoice } from "./sprache.mjs";
+import { connectVoice, narrationText, registerActionKey } from "./sprache.mjs";
+import { createNarrator } from "./vorlesen.mjs";
 import { evaluateAnswer, initialRound } from "./spiel.mjs";
 
 const byId = (id) => document.getElementById(id);
@@ -27,20 +28,50 @@ const feedbackCopy = {
 
 let story;
 let position = 0;
+let advanceTimer;
+const narrator = createNarrator(window.speechSynthesis, window.SpeechSynthesisUtterance, () => {});
 function narrationMedia() {
   if (!video.hidden) return video;
   return audio.hidden ? null : audio;
 }
+
+function playNarration(media) {
+  if (!media) return false;
+  media.currentTime = 0;
+  media.play().catch(voice.startAutomatic);
+  return true;
+}
+
+function handleCommand(command) {
+  if (command === "menu") {
+    window.location.assign("./");
+  } else if (!finish.hidden && ["restart", "start", "repeat"].includes(command)) {
+    restart();
+  } else if (command === "next" && !sceneBody.hidden && !next.hidden) {
+    goNext();
+  } else if (command === "back" && !sceneBody.hidden && position > 0) {
+    goBack();
+  } else if (!sceneBody.hidden && (command === "repeat" || command === "start")) {
+    if (!playNarration(narrationMedia())) {
+      const scene = story.szenen[position];
+      narrator.play([narrationText(scene.text || scene.titel)], voice.startAutomatic);
+    }
+  } else {
+    return false;
+  }
+  return true;
+}
 const voice = connectVoice(form, answer, {
   stopPlayback: () => {
+    narrator.stop();
     audio.pause();
     video.pause();
   },
   isReady: () => {
-    const narration = narrationMedia();
-    return !sceneBody.hidden && !form.hidden && !answer.value &&
-      (!narration || narration.ended) && (audio.hidden || audio.paused) && (video.hidden || video.paused);
+    return Boolean(story) && !narrator.isPlaying() && !answer.value && (audio.hidden || audio.paused) && (video.hidden || video.paused) &&
+      !advanceTimer;
   },
+  command: handleCommand,
 });
 
 function setMedia(element, source) {
@@ -81,10 +112,12 @@ video.addEventListener("error", () => mediaFailed(video, "Das Video ist gerade n
 audio.addEventListener("error", () => mediaFailed(audio, "Die Tonspur ist gerade nicht verfügbar."));
 video.addEventListener("play", () => {
   voice.cancel();
+  narrator.stop();
   audio.pause();
 });
 audio.addEventListener("play", () => {
   voice.cancel();
+  narrator.stop();
   video.pause();
 });
 
@@ -102,7 +135,10 @@ function renderAnswer() {
 }
 
 function showScene() {
+  clearTimeout(advanceTimer);
+  advanceTimer = undefined;
   voice.reset();
+  narrator.stop();
   const scene = story.szenen[position];
   finish.hidden = true;
   sceneBody.hidden = false;
@@ -119,7 +155,10 @@ function showScene() {
 }
 
 function showFinish() {
+  clearTimeout(advanceTimer);
+  advanceTimer = undefined;
   voice.reset();
+  narrator.stop();
   renderMedia();
   sceneBody.hidden = true;
   finish.hidden = false;
@@ -128,6 +167,7 @@ function showFinish() {
   const result = `Du hast ${total} ${total === 1 ? "Stern" : "Sterne"} gesammelt.`;
   byId("story-result").textContent = [story.abschluss, result].filter(Boolean).join(" ");
   title.focus({ preventScroll: true });
+  voice.startAutomatic();
 }
 
 form.addEventListener("submit", (event) => {
@@ -135,6 +175,7 @@ form.addEventListener("submit", (event) => {
   const scene = story.szenen[position];
   if (!scene.aufgabe || form.hidden) return;
   voice.reset();
+  narrator.stop();
   const current = states.get(position) ?? initialRound();
   const updated = evaluateAnswer(current, { ...scene.aufgabe, op: "×" }, answer.value, feedbackCopy);
   states.set(position, { ...updated, spokenAnswer: form.dataset.spokenAnswer });
@@ -143,25 +184,38 @@ form.addEventListener("submit", (event) => {
   renderAnswer();
   if (updated.feedback.advance) next.focus();
   else answer.focus();
+  if (updated.feedback.kind === "correct") {
+    const answeredPosition = position;
+    advanceTimer = setTimeout(() => { if (position === answeredPosition) goNext(); }, 1100);
+  } else {
+    voice.startAutomatic();
+  }
 });
 
-previous.addEventListener("click", () => {
+function goBack() {
   if (position === 0) return;
   position--;
   showScene();
-});
+}
 
-next.addEventListener("click", () => {
-  if (next.hidden) return;
+function goNext() {
+  if (next.hidden || sceneBody.hidden) return;
   position++;
   if (position === story.szenen.length) showFinish();
   else showScene();
-});
+}
 
-byId("story-restart").addEventListener("click", () => {
+function restart() {
   position = 0;
   states.clear();
   showScene();
+}
+previous.addEventListener("click", goBack);
+next.addEventListener("click", goNext);
+byId("story-restart").addEventListener("click", restart);
+registerActionKey(() => {
+  if (!sceneBody.hidden && !next.hidden) goNext();
+  else voice.startManual();
 });
 
 const load = byId("story-load");

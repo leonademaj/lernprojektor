@@ -12,9 +12,9 @@
   <div class="site">
     <header class="top">
       <a class="brand back-link" href="./"><span class="brand-icon" aria-hidden="true">←</span><span>Zur Lernpfad-Auswahl</span></a>
-      <button class="sound" type="button" data-automatic-voice aria-pressed="false" aria-describedby="auto-voice-info" hidden>Auto-Mikrofon an</button>
+      <button class="sound" type="button" data-automatic-voice aria-pressed="false" aria-describedby="auto-voice-info" hidden>Sprachsteuerung an</button>
     </header>
-    <p id="auto-voice-info" class="sr-only">Wenn du das Auto-Mikrofon einschaltest, startet es nach der Aufgabe. Dein Browser kann Gesprochenes an seinen Spracherkennungsdienst senden.</p>
+    <p id="auto-voice-info" class="sr-only">Mit der Sprachsteuerung startet das Mikrofon nach der Ansage, wenn eine Antwort oder ein Befehl möglich ist. Dein Browser kann Gesprochenes an seinen Spracherkennungsdienst senden.</p>
     <main>
       <section id="story" class="lesson-player" aria-labelledby="story-title">
         <div id="scene-media" class="lesson-media">
@@ -37,11 +37,6 @@
               <label class="sr-only" for="story-number">Deine Antwort</label>
               <input id="story-number" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="Deine Zahl">
               <button class="main-button" type="submit">Prüfen</button>
-              <div class="voice-controls">
-                <button class="sound voice-button" type="button" aria-pressed="false" aria-describedby="voice-note" hidden>🎙 Antwort sprechen</button>
-                <p id="voice-note" class="voice-note" hidden>Dein Browser kann das Gesprochene an seinen Spracherkennungsdienst senden.</p>
-                <p class="voice-status" role="status" aria-atomic="true"></p>
-              </div>
             </form>
             <p id="story-feedback" class="feedback" role="status" aria-atomic="true"></p>
             <div class="lesson-navigation">
@@ -59,6 +54,11 @@
           </div>
         </div>
       </section>
+      <div class="voice-controls">
+                <button class="sound voice-button" type="button" aria-pressed="false" aria-describedby="voice-note" hidden>🎙 Sprechen</button>
+                <p id="voice-note" class="voice-note" hidden>Dein Browser kann das Gesprochene an seinen Spracherkennungsdienst senden.</p>
+                <p class="voice-status" role="status" aria-atomic="true"></p>
+              </div>
     </main>
     <footer>Ein Lernprojekt der OTH Regensburg</footer>
   </div>
