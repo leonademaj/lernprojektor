@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f4eb">
+  <meta name="description" content="Ein illustriertes Matheabenteuer für die 2. Klasse. Hilf Mika, den Sternenleuchtturm wieder zum Leuchten zu bringen.">
+  <title>Mika und der Sternenleuchtturm</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <div class="site">
+    <header class="top">
+      <a class="brand back-link" href="./"><span class="brand-icon" aria-hidden="true">←</span><span>Zur Lernpfad-Auswahl</span></a>
+      <div class="audio-controls">
+        <button class="sound" id="replay-audio" type="button" hidden>🔊 Nochmal vorlesen</button>
+        <button class="sound" id="sound" type="button" aria-pressed="false">🔇 Ton aus</button>
+      </div>
+    </header>
+    <main>
+      <section class="hero" id="intro" aria-labelledby="intro-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Matheabenteuer · 2. Klasse</p>
+          <h1 id="intro-title">Mika und der <span>Sternen&shy;leuchtturm</span></h1>
+          <p class="intro-text" id="intro-text">Nach einem Sturm ist der Leuchtturm dunkel. Hilf Mika, ihn wieder zum Leuchten zu bringen!</p>
+          <button type="button" class="main-button" id="start" disabled>Abenteuer starten <span aria-hidden="true">→</span></button>
+          <p class="load-note" id="load-note" role="status"></p>
+        </div>
+        <div class="hero-art">
+          <img src="./assets/leuchtturm.webp" alt="Mika im kleinen Boot vor einer felsigen Insel mit Leuchtturm" width="1200" height="900" fetchpriority="high">
+        </div>
+      </section>
+
+      <section id="game" class="hero play" aria-labelledby="chapter" hidden>
+        <div class="hero-art play-art">
+          <img id="game-fallback-img" src="./assets/leuchtturm.webp" alt="" width="1200" height="900">
+          <video id="chapter-video" muted loop playsinline preload="auto" hidden></video>
+          <div class="art-label"><span aria-hidden="true">✦</span> <span id="stars">0 Sterne</span></div>
+        </div>
+        <div class="hero-copy play-copy">
+          <p class="eyebrow" id="question-number"></p>
+          <h1 id="chapter" tabindex="-1"></h1>
+          <p class="scene" id="scene"></p>
+          <p class="equation" id="equation"></p>
+          <p class="feedback" id="feedback" role="status" aria-atomic="true"></p>
+          <form id="answer-form" novalidate>
+            <label class="sr-only" for="answer">Deine Antwort</label>
+            <input id="answer" inputmode="numeric" autocomplete="off" placeholder="Deine Zahl" maxlength="3">
+            <button type="submit" class="main-button">Prüfen <span aria-hidden="true">→</span></button>
+          </form>
+          <button type="button" class="main-button" id="continue" hidden>Weiter</button>
+        </div>
+      </section>
+
+      <section id="finish" class="hero" aria-labelledby="finish-title" hidden>
+        <div class="hero-copy">
+          <p class="eyebrow" id="final-stars"></p>
+          <h1 id="finish-title" tabindex="-1">Das Licht ist zurück!</h1>
+          <p class="intro-text" id="ending"></p>
+          <button type="button" class="main-button" id="restart">Noch einmal spielen <span aria-hidden="true">↻</span></button>
+        </div>
+        <div class="hero-art">
+          <img id="finish-fallback-img" src="./assets/leuchtturm.webp" alt="Der Leuchtturm strahlt über das Meer" width="1200" height="900">
+          <video id="finish-video" muted loop playsinline preload="auto" hidden></video>
+        </div>
+      </section>
+
+      <section class="route" aria-label="Deine Route">
+        <div class="route-heading"><h2>Deine Route</h2><p id="route-summary">3 Stationen · 12 Aufgaben</p></div>
+        <ol class="stops">
+          <li><span class="stop-icon sea" aria-hidden="true">⚓</span><div><strong>Im Hafen</strong><p>Das Boot startklar machen</p></div></li>
+          <li><span class="stop-icon island" aria-hidden="true">❧</span><div><strong>Auf der Insel</strong><p>Den Weg zum Turm finden</p></div></li>
+          <li><span class="stop-icon light" aria-hidden="true">✦</span><div><strong>Im Leuchtturm</strong><p>Das Licht wieder einschalten</p></div></li>
+        </ol>
+      </section>
+    </main>
+    <footer>Plus und Minus bis 100 <span aria-hidden="true">·</span> Ein Lernprojekt der OTH Regensburg</footer>
+  </div>
+</body>
+</html>

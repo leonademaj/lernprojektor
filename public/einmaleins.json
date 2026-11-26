@@ -1,0 +1,35 @@
+{
+  "titel": "Der Obststand",
+  "beispiel": true,
+  "abschluss": "Die Körbe sind gepackt und der Obststand kann öffnen.",
+  "szenen": [
+    {
+      "titel": "Der Markt öffnet bald",
+      "text": "Heute ist Markttag. Am Obststand stehen leere Körbe. Hilf beim Packen, damit in jedem Korb gleich viel Obst liegt."
+    },
+    {
+      "titel": "Äpfel für die Körbe",
+      "text": "Es gibt 3 Körbe. In jeden Korb kommen 4 Äpfel. Wie viele Äpfel brauchst du insgesamt?",
+      "aufgabe": {
+        "a": 3,
+        "b": 4,
+        "hinweis": "Zähle in Viererschritten. Beginne mit 4 und zähle noch zweimal 4 dazu.",
+        "extra_hinweis": {
+          "bei": 7,
+          "text": "Die 3 zählt die Körbe. Die 4 zählt die Äpfel in jedem Korb. Rechne 4 + 4 + 4."
+        },
+        "weg": "4 + 4 + 4 = 12. Du brauchst 12 Äpfel."
+      }
+    },
+    {
+      "titel": "Birnen für den Markt",
+      "text": "Jetzt stehen 5 Körbe bereit. In jeden Korb kommen 2 Birnen. Wie viele Birnen brauchst du insgesamt?",
+      "aufgabe": {
+        "a": 5,
+        "b": 2,
+        "hinweis": "Sprich die Zweierschritte bis zum fünften Korb: 2, 4, 6 …",
+        "weg": "2 + 2 + 2 + 2 + 2 = 10. Du brauchst 10 Birnen."
+      }
+    }
+  ]
+}

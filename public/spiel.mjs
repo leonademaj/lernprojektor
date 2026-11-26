@@ -2,7 +2,13 @@ export function initialRound() {
   return { position: 0, stars: 0, failures: 0, feedback: null };
 }
 
-export function evaluateAnswer(round, task, input) {
+const mikaFeedback = {
+  correct: "Richtig! Mika gibt dir einen Stern.",
+  hint: "Mikas Tipp:",
+  solution: "Mika zeigt dir den Rechenweg.",
+};
+
+export function evaluateAnswer(round, task, input, copy = mikaFeedback) {
   if (round.feedback?.advance) return round;
 
   const digits = input.trim();
@@ -20,22 +26,23 @@ export function evaluateAnswer(round, task, input) {
   }
 
   const answer = Number(digits);
-  const solution = task.op === "+" ? task.a + task.b : task.a - task.b;
+  const operations = { "+": () => task.a + task.b, "−": () => task.a - task.b, "×": () => task.a * task.b };
+  const solution = operations[task.op]();
   if (answer === solution) {
     return { ...round, stars: round.stars + 1, feedback: {
-      kind: "correct", text: "Richtig! Mika gibt dir einen Stern.", advance: true,
+      kind: "correct", text: copy.correct, advance: true,
     } };
   }
 
   if (round.failures === 0) {
-    const hint = answer === task.extra_hinweis.bei ? task.extra_hinweis.text : task.hinweis;
+    const hint = answer === task.extra_hinweis?.bei ? task.extra_hinweis.text : task.hinweis;
     return { ...round, failures: 1, feedback: {
-      kind: "hint", text: `Mikas Tipp: ${hint}`, hint, advance: false,
+      kind: "hint", text: `${copy.hint} ${hint}`, hint, advance: false,
     } };
   }
 
   return { ...round, failures: 2, feedback: {
-    kind: "solution", text: `Mika zeigt dir den Rechenweg. ${task.weg}`, advance: true,
+    kind: "solution", text: `${copy.solution} ${task.weg}`, advance: true,
   } };
 }
 

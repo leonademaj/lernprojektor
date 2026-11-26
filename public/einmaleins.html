@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f4eb">
+  <title>Sachaufgaben zum kleinen Einmaleins · Lernprojektor</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./einmaleins.mjs"></script>
+</head>
+<body>
+  <div class="site">
+    <header class="top">
+      <a class="brand back-link" href="./"><span class="brand-icon" aria-hidden="true">←</span><span>Zur Lernpfad-Auswahl</span></a>
+    </header>
+    <main>
+      <section id="story" class="lesson-player" aria-labelledby="story-title">
+        <div id="scene-media" class="lesson-media">
+          <div id="media-placeholder" class="times-art" aria-hidden="true">
+            <span class="tile tile-left">3</span><span class="tile tile-middle">×</span><span class="tile tile-right">4</span>
+          </div>
+          <img id="scene-image" alt="" hidden>
+          <video id="scene-video" controls playsinline preload="metadata" hidden></video>
+        </div>
+        <div class="lesson-copy">
+          <p id="story-label" class="eyebrow">Sachaufgaben · Kleines Einmaleins</p>
+          <h1 id="story-title" tabindex="-1">Kleines Einmaleins</h1>
+          <p id="scene-progress" class="lesson-progress"></p>
+          <div id="scene-body" hidden>
+            <h2 id="scene-title" tabindex="-1"></h2>
+            <p id="scene-text" class="scene"></p>
+            <audio id="scene-audio" controls preload="metadata" aria-label="Szene anhören" hidden></audio>
+            <p id="media-note" class="load-note" role="status"></p>
+            <form id="story-answer" novalidate hidden>
+              <label class="sr-only" for="story-number">Deine Antwort</label>
+              <input id="story-number" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="Deine Zahl">
+              <button class="main-button" type="submit">Prüfen</button>
+            </form>
+            <p id="story-feedback" class="feedback" role="status" aria-atomic="true"></p>
+            <div class="lesson-navigation">
+              <button id="previous-scene" class="sound" type="button" hidden>← Zurück</button>
+              <button id="next-scene" class="main-button" type="button" hidden>Weiter →</button>
+            </div>
+          </div>
+          <p id="story-load" class="load-note" role="status">Die Geschichte wird geladen.</p>
+          <div id="story-finish" hidden>
+            <p id="story-result" class="scene"></p>
+            <div class="lesson-navigation">
+              <button id="story-restart" class="main-button" type="button">Noch einmal spielen</button>
+              <a class="sound text-button" href="./">Zur Lernpfad-Auswahl</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer>Ein Lernprojekt der OTH Regensburg</footer>
+  </div>
+</body>
+</html>
