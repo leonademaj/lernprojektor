@@ -1,4 +1,5 @@
-import { connectVoice } from "./sprache.mjs";
+import { connectVoice, narrationText } from "./sprache.mjs";
+import { createNarrator } from "./vorlesen.mjs";
 import { chapterIndex, evaluateAnswer, initialRound, nextRound } from "./spiel.mjs";
 
 const byId = (id) => document.getElementById(id);
@@ -23,19 +24,20 @@ let round = initialRound();
 let audio;
 let soundEnabled = false;
 let soundPreferenceChosen = false;
-let lastSpokenText = "";
+let lastSpokenParts = [];
 let currentChapterVideoSrc = "";
-let utterancePlaying = null;
-let speechTimeout;
+const narrator = createNarrator(window.speechSynthesis, window.SpeechSynthesisUtterance, (speaking) => {
+  replayAudio.classList.toggle("speaking", speaking);
+});
 const voice = connectVoice(form, answer, {
   stopPlayback: stopSpeech,
-  isReady: () => !game.hidden && !form.hidden && !utterancePlaying && !answer.value,
+  isReady: () => !game.hidden && !form.hidden && !narrator.isPlaying() && !answer.value,
 });
 
 function updateSoundUI() {
   sound.setAttribute("aria-pressed", String(soundEnabled));
   sound.textContent = soundEnabled ? "🔊 Ton an" : "🔇 Ton aus";
-  replayAudio.hidden = !soundEnabled || !lastSpokenText || !("speechSynthesis" in window);
+  replayAudio.hidden = !soundEnabled || !lastSpokenParts.length || !("speechSynthesis" in window);
 }
 
 async function enableSound() {
@@ -54,52 +56,18 @@ async function enableSound() {
 }
 
 function stopSpeech() {
-  utterancePlaying = null;
-  clearTimeout(speechTimeout);
-  if ("speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
-  }
-  replayAudio.classList.remove("speaking");
+  narrator.stop();
 }
 
-function speak(text, after = () => {}) {
-  lastSpokenText = text;
+function speak(content, after = () => {}, delay = 0) {
+  lastSpokenParts = (Array.isArray(content) ? content : [content]).filter(Boolean).map(narrationText);
   updateSoundUI();
-  if (!soundEnabled || !("speechSynthesis" in window) || !text) {
+  if (!soundEnabled) {
     after();
     return;
   }
-
   voice.cancel();
-  stopSpeech();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "de-DE";
-  utterance.rate = 0.94;
-  utterance.pitch = 1.08;
-
-  const voices = window.speechSynthesis.getVoices();
-  const germanVoice = voices.find((v) => v.lang.startsWith("de") && !v.localService)
-    ?? voices.find((v) => v.lang.startsWith("de"));
-  if (germanVoice) utterance.voice = germanVoice;
-
-  utterancePlaying = utterance;
-  function finishSpeaking() {
-    if (utterancePlaying !== utterance) return;
-    stopSpeech();
-    after();
-  }
-  utterance.onstart = () => {
-    if (utterancePlaying === utterance) replayAudio.classList.add("speaking");
-  };
-  utterance.onend = finishSpeaking;
-  utterance.onerror = finishSpeaking;
-  speechTimeout = setTimeout(finishSpeaking, 30000);
-  window.speechSynthesis.speak(utterance);
-}
-
-function formatEquationForSpeech(task) {
-  const operatorWord = task.op === "+" ? "plus" : "minus";
-  return `Wie viel ist ${task.a} ${operatorWord} ${task.b}?`;
+  narrator.play(lastSpokenParts, after, delay);
 }
 
 function playToneSequence(notes, type = "sine", volume = 0.085) {
@@ -203,7 +171,7 @@ function showQuestion() {
 
   byId("chapter").textContent = place.titel;
   byId("question-number").textContent = `Aufgabe ${round.position + 1} von ${tasks.length}`;
-  byId("scene").textContent = sceneText;
+  byId("scene").textContent = `${sceneText} ${task.frage}`;
   byId("equation").textContent = `${task.a} ${task.op} ${task.b} = ?`;
   byId("stars").textContent = starCount(round.stars);
   game.dataset.chapter = chapter;
@@ -215,7 +183,7 @@ function showQuestion() {
     setStageMedia(chapterVideo, gameFallbackImg, currentChapterVideoSrc);
   }
 
-  speak(`${sceneText} ${formatEquationForSpeech(task)}`, voice.startAutomatic);
+  speak([sceneText, task.frage], voice.startAutomatic);
   byId("chapter").focus({ preventScroll: true });
 }
 
@@ -255,7 +223,7 @@ form.addEventListener("submit", (event) => {
   round = { ...next, spokenAnswer: form.dataset.spokenAnswer };
   delete form.dataset.spokenAnswer;
   playEffect(round.feedback.kind);
-  speak(round.feedback.text);
+  speak(round.feedback.text, undefined, 480);
   answer.value = "";
   renderFeedback();
   if (round.feedback.advance) advance.focus();
@@ -278,7 +246,7 @@ advance.addEventListener("click", () => {
     setRoute(-1, true);
     setStageMedia(finishVideo, finishFallbackImg, story.finale_video);
     playEffect("finale");
-    speak(`Das Licht ist zurück! ${story.ende}`);
+    speak(["Das Licht ist zurück!", story.ende], undefined, 840);
     byId("finish-title").focus({ preventScroll: true });
   }
   window.scrollTo(0, 0);
@@ -288,7 +256,7 @@ sound.addEventListener("click", async () => {
   soundPreferenceChosen = true;
   if (!soundEnabled) {
     await enableSound();
-    if (lastSpokenText) speak(lastSpokenText, voice.startAutomatic);
+    if (lastSpokenParts.length) speak(lastSpokenParts, voice.startAutomatic);
   } else {
     soundEnabled = false;
     stopSpeech();
@@ -298,7 +266,7 @@ sound.addEventListener("click", async () => {
 });
 
 replayAudio.addEventListener("click", () => {
-  if (lastSpokenText) speak(lastSpokenText, voice.startAutomatic);
+  if (lastSpokenParts.length) speak(lastSpokenParts, voice.startAutomatic);
 });
 
 if ("speechSynthesis" in window) {

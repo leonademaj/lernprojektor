@@ -20,9 +20,9 @@ const next = byId("next-scene");
 const finish = byId("story-finish");
 const states = new Map();
 const feedbackCopy = {
-  correct: "Richtig gerechnet! Du bekommst einen Stern.",
-  hint: "Tipp:",
-  solution: "So kannst du rechnen.",
+  correct: "Genau, das stimmt! Dafür bekommst du einen Stern.",
+  hint: "Probier’s mal so:",
+  solution: "Ich zeig dir, wie du rechnen kannst.",
 };
 
 let story;

@@ -5,11 +5,12 @@
     "b": 20,
     "hinweis": "20 sind zwei Zehner. Zähle von 36 aus zweimal zehn weiter.",
     "weg": "36 plus 10 ergibt 46. Noch einmal 10 ergibt 56.",
-    "szene": "Im Boot liegen 36 Meter Seil. Mika bringt noch 20 Meter.",
+    "szene": "Mika schaut ins Boot. Dort liegen 36 Meter Seil. Vom Steg holt Mika noch 20 Meter.",
     "extra_hinweis": {
       "bei": 38,
       "text": "Die 2 in 20 steht für zwei Zehner. Zähle zweimal zehn weiter."
-    }
+    },
+    "frage": "Wie viele Meter Seil habt ihr jetzt zusammen?"
   },
   {
     "a": 48,
@@ -17,11 +18,12 @@
     "b": 6,
     "hinweis": "Ziehe die sechs Einer von den acht Einern ab.",
     "weg": "48 sind 40 und 8. 8 minus 6 ergibt 2. Zusammen sind das 42.",
-    "szene": "In einer Kiste liegen 48 Proviantpäckchen. Mika lädt 6 ins Boot.",
+    "szene": "In der Kiste liegen 48 Proviantpäckchen. Mika nimmt 6 heraus und lädt sie ins Boot.",
     "extra_hinweis": {
       "bei": 54,
       "text": "Beim Einladen werden es in der Kiste weniger. Ziehe 6 von 48 ab."
-    }
+    },
+    "frage": "Wie viele Päckchen bleiben in der Kiste?"
   },
   {
     "a": 27,
@@ -29,11 +31,12 @@
     "b": 8,
     "hinweis": "Rechne zuerst bis 30. Von den 8 brauchst du dafür 3.",
     "weg": "27 plus 3 ergibt 30. Von den 8 bleiben 5 übrig. 30 plus 5 ergibt 35.",
-    "szene": "Der Motor hat noch Energie für 27 Minuten. Eine Reserve reicht für weitere 8 Minuten.",
+    "szene": "Mit dem Akku kann das Boot noch 27 Minuten fahren. Der Ersatzakku bringt euch weitere 8 Minuten.",
     "extra_hinweis": {
       "bei": 30,
       "text": "30 ist ein guter Zwischenstopp. Von den 8 bleiben dann noch 5 übrig."
-    }
+    },
+    "frage": "Wie viele Minuten könnt ihr mit beiden Akkus fahren?"
   },
   {
     "a": 63,
@@ -41,11 +44,12 @@
     "b": 20,
     "hinweis": "Gehe von 63 aus zweimal zehn zurück.",
     "weg": "63 minus 10 ergibt 53. Noch einmal 10 weniger ergibt 43.",
-    "szene": "Bis zur Insel sind es 63 Meter. Das Boot fährt die ersten 20 Meter.",
+    "szene": "Bis zur Insel sind es 63 Meter. Die ersten 20 Meter habt ihr geschafft.",
     "extra_hinweis": {
       "bei": 83,
       "text": "Mit jedem Meter wird der restliche Weg kürzer. Zähle zwei Zehner zurück."
-    }
+    },
+    "frage": "Wie viele Meter müsst ihr noch fahren?"
   },
   {
     "a": 45,
@@ -53,11 +57,12 @@
     "b": 9,
     "hinweis": "Rechne 10 dazu und ziehe dann 1 ab.",
     "weg": "45 plus 10 ergibt 55. 55 minus 1 ergibt 54.",
-    "szene": "Am Steg sind 45 Bretter fest. Mika befestigt noch 9.",
+    "szene": "Am Steg sind schon 45 Bretter fest. Mika befestigt noch 9.",
     "extra_hinweis": {
       "bei": 55,
       "text": "Du hast 10 dazugerechnet. Für plus 9 gehst du jetzt einen Schritt zurück."
-    }
+    },
+    "frage": "Wie viele Bretter sind jetzt fest?"
   },
   {
     "a": 72,
@@ -65,11 +70,12 @@
     "b": 5,
     "hinweis": "Rechne zuerst bis 70 zurück. Dazu brauchst du 2 von den 5.",
     "weg": "72 minus 2 ergibt 70. Es fehlen noch 3. 70 minus 3 ergibt 67.",
-    "szene": "Auf Mikas Karte ist der Turm noch 72 Meter entfernt. Ihr lauft 5 Meter.",
+    "szene": "Mika schaut auf die Karte. Bis zum Turm sind es 72 Meter. Ihr geht die ersten 5 Meter.",
     "extra_hinweis": {
       "bei": 70,
       "text": "Bis 70 waren es erst 2 Meter. Gehe noch 3 Meter weiter zurück."
-    }
+    },
+    "frage": "Wie viele Meter sind es jetzt noch bis zum Turm?"
   },
   {
     "a": 14,
@@ -77,11 +83,12 @@
     "b": 30,
     "hinweis": "30 sind drei Zehner. Die vier Einer bleiben gleich.",
     "weg": "14 plus 10 ergibt 24. Noch zweimal 10 ergibt 44.",
-    "szene": "Ihr habt 14 Wegmarken gefunden. Auf dem zweiten Weg zählt Mika 30 weitere.",
+    "szene": "Auf dem ersten Weg findet ihr 14 Wegmarken. Auf dem zweiten zählt Mika noch 30.",
     "extra_hinweis": {
       "bei": 17,
       "text": "30 sind drei Zehner. Die 4 Einer von 14 bleiben gleich."
-    }
+    },
+    "frage": "Wie viele Wegmarken habt ihr auf beiden Wegen gefunden?"
   },
   {
     "a": 90,
@@ -89,11 +96,12 @@
     "b": 40,
     "hinweis": "Ziehe von neun Zehnern vier Zehner ab.",
     "weg": "Neun Zehner minus vier Zehner sind fünf Zehner. Das ergibt 50.",
-    "szene": "Ihr habt 90 Schritte bis zum Turm gezählt. Die ersten 40 Schritte sind geschafft.",
+    "szene": "Bis zum Turm sind es 90 Schritte. Die ersten 40 habt ihr schon geschafft.",
     "extra_hinweis": {
       "bei": 60,
       "text": "Von 9 Zehnern gehen 4 Zehner weg. Wie viele Zehner bleiben?"
-    }
+    },
+    "frage": "Wie viele Schritte fehlen noch?"
   },
   {
     "a": 56,
@@ -101,11 +109,12 @@
     "b": 17,
     "hinweis": "Zerlege 17 in 10 und 7. Beginne mit dem Zehner.",
     "weg": "56 plus 10 ergibt 66. Plus 4 ergibt 70. Plus die letzten 3 ergibt 73.",
-    "szene": "Mika findet 56 Kristalle. Im Turm liegen noch 17 weitere.",
+    "szene": "Mika findet 56 Kristalle. In einer Nische im Turm liegen noch 17.",
     "extra_hinweis": {
       "bei": 66,
       "text": "66 ist der Zwischenstand nach plus 10. Zähle die übrigen 7 dazu."
-    }
+    },
+    "frage": "Wie viele Kristalle habt ihr zusammen?"
   },
   {
     "a": 81,
@@ -113,11 +122,12 @@
     "b": 19,
     "hinweis": "Ziehe erst 20 ab und zähle dann 1 dazu.",
     "weg": "81 minus 20 ergibt 61. Wir haben 1 zu viel abgezogen. 61 plus 1 ergibt 62.",
-    "szene": "Die Turmtreppe hat 81 Stufen. Ihr seid schon 19 hinaufgestiegen.",
+    "szene": "Die Treppe hat 81 Stufen. Ihr seid schon 19 Stufen hinaufgestiegen.",
     "extra_hinweis": {
       "bei": 61,
       "text": "Du hast 20 abgezogen. Für minus 19 zählst du jetzt 1 dazu."
-    }
+    },
+    "frage": "Wie viele Stufen müsst ihr noch hinauf?"
   },
   {
     "a": 38,
@@ -125,11 +135,12 @@
     "b": 26,
     "hinweis": "Zerlege die 26 in 20 und 6.",
     "weg": "38 plus 20 ergibt 58. Plus 2 ergibt 60. Plus die letzten 4 ergibt 64.",
-    "szene": "In der Lampe stecken 38 Lichtsteine. Mika legt noch 26 hinein.",
+    "szene": "In der Lampe stecken 38 Lichtsteine. Mika legt 26 dazu.",
     "extra_hinweis": {
       "bei": 58,
       "text": "Die 20 hast du schon dazugerechnet. Jetzt fehlen die 6 Einer."
-    }
+    },
+    "frage": "Wie viele Lichtsteine sind jetzt in der Lampe?"
   },
   {
     "a": 100,
@@ -137,10 +148,11 @@
     "b": 7,
     "hinweis": "Ziehe erst 10 ab und zähle dann 3 dazu.",
     "weg": "100 minus 10 ergibt 90. Wir haben 3 zu viel abgezogen. 90 plus 3 ergibt 93.",
-    "szene": "Der Turm hat Energie für 100 Minuten. 7 Minuten sind schon vergangen.",
+    "szene": "Die Lampe kann 100 Minuten leuchten. 7 Minuten sind schon vergangen.",
     "extra_hinweis": {
       "bei": 90,
       "text": "Du hast 10 abgezogen. Für minus 7 zählst du 3 wieder dazu."
-    }
+    },
+    "frage": "Wie viele Minuten kann die Lampe noch leuchten?"
   }
 ]

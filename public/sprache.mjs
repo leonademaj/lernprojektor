@@ -13,6 +13,18 @@ for (const [index, ten] of tens.entries()) {
   }
 }
 
+const numberNames = new Map([...words].map(([word, number]) => [number, word]));
+numberNames.set(1, "eins");
+numberNames.set(100, "hundert");
+
+export function narrationText(text) {
+  return text.replace(/\b\d+\b/g, (digits) => numberNames.get(Number(digits)) ?? digits)
+    .replaceAll(" + ", " plus ")
+    .replaceAll(" − ", " minus ")
+    .replaceAll(" × ", " mal ")
+    .replaceAll(" = ", " ergibt ");
+}
+
 export function spokenNumber(transcript) {
   const phrase = transcript.normalize("NFC").toLocaleLowerCase("de-DE").trim()
     .replace(/[.!?]+$/, "")
@@ -27,7 +39,7 @@ const messages = {
   "not-allowed": "Das Mikrofon ist gesperrt. Erlaube den Zugriff im Browser oder tippe deine Antwort.",
   "service-not-allowed": "Die Spracherkennung ist im Browser gesperrt. Du kannst deine Antwort eintippen.",
   "audio-capture": "Es wurde kein Mikrofon gefunden. Du kannst deine Antwort eintippen.",
-  "no-speech": "Ich habe keine Zahl gehört. Sprich noch einmal oder tippe deine Antwort.",
+  "no-speech": "Ich habe dich gerade nicht gehört. Sag deine Zahl noch einmal oder tippe sie ein.",
   "network": "Die Spracherkennung ist gerade nicht erreichbar. Du kannst deine Antwort eintippen.",
 };
 
@@ -90,7 +102,7 @@ export function connectVoice(form, input, { stopPlayback, isReady }) {
       const value = spokenNumber(event.results[event.resultIndex][0].transcript);
       if (form.hidden) return;
       if (value === null) {
-        status.textContent = "Ich habe keine eindeutige Zahl verstanden. Versuche es noch einmal.";
+        status.textContent = "Welche Zahl meinst du? Sag sie noch einmal, zum Beispiel: zwölf.";
         return;
       }
       input.value = String(value);

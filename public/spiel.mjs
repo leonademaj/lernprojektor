@@ -3,9 +3,9 @@ export function initialRound() {
 }
 
 const mikaFeedback = {
-  correct: "Richtig! Mika gibt dir einen Stern.",
-  hint: "Mikas Tipp:",
-  solution: "Mika zeigt dir den Rechenweg.",
+  correct: "Genau, das stimmt! Dafür bekommst du einen Stern.",
+  hint: "Probier’s mal so:",
+  solution: "Schauen wir uns den Rechenweg gemeinsam an.",
 };
 
 export function evaluateAnswer(round, task, input, copy = mikaFeedback) {
